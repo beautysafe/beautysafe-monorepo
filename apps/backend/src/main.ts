@@ -6,7 +6,10 @@ import { ValidationPipe } from '@nestjs/common';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   app.useGlobalPipes(new ValidationPipe());
-  app.enableCors();
+    app.enableCors({
+    origin: 'http://localhost:5173', // Your frontend's origin
+    credentials: true,
+  });
 
   const config = new DocumentBuilder()
     .setTitle('Beauty Safe API')
