@@ -7,7 +7,10 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   app.useGlobalPipes(new ValidationPipe());
     app.enableCors({
-    origin: 'http://localhost:5173', // Your frontend's origin
+      origin: [
+    'http://localhost:5173',
+    'https://beauty-safe-monorepo-1.onrender.com'
+  ],
     credentials: true,
   });
 
