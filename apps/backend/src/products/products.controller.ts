@@ -3,79 +3,86 @@ import {
   Get,
   Post,
   Body,
-  Param,
   Patch,
+  Param,
   Delete,
-  Query,
-  Req,
+  ParseIntPipe,
 } from '@nestjs/common';
-import { Request } from 'express';
 import { ProductsService } from './products.service';
-import { Product } from './product.entity';
-import { ApiTags, ApiOperation } from '@nestjs/swagger';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
-import { UseGuards } from '@nestjs/common';
-import { AuthGuard } from '@nestjs/passport';
+import {
+  ApiBasicAuth,
+  ApiBearerAuth,
+  ApiOperation,
+  ApiTags,
+} from '@nestjs/swagger';
+import { Public } from '../common/decorators/public.decorator';
 import { Roles } from '../common/decorators/roles.decorator';
-import { RolesGuard } from 'src/common/guards/roles.guard';
-import { ApiBearerAuth } from '@nestjs/swagger';
-import { Public } from 'src/common/decorators/public.decorator';
 
 @ApiBearerAuth()
-@ApiTags('products')
+@ApiTags('Products')
 @Controller('products')
 export class ProductsController {
   constructor(private readonly productsService: ProductsService) {}
-
   @Roles('admin')
+  @ApiOperation({ summary: 'Create a new product' })
   @Post()
-  @ApiOperation({ summary: 'Create product' })
-  create(@Body() data: CreateProductDto) {
-    console.log('POST /products called');
-    return this.productsService.create(data);
+  create(@Body() createProductDto: CreateProductDto) {
+    return this.productsService.create(createProductDto);
   }
-  @Get('test-auth')
-  testAuth(@Req() req: any) {
-    console.log('testAuth req.user:', req.user);
-    return req.user;
-  }
-  @Get('debug-token')
-  debugToken(@Req() req) {
-    return { user: req.user, headers: req.headers };
-  }
-  @Public()
+  @Roles('admin')
+  @ApiOperation({ summary: 'Get all products' })
   @Get()
-  @ApiOperation({ summary: 'List all products' })
   findAll() {
     return this.productsService.findAll();
   }
-
   @Public()
-  @Get(':id')
-  @ApiOperation({ summary: 'Get product by ID' })
-  findOne(@Param('id') id: string) {
-    return this.productsService.findOne(+id);
-  }
-
-  @Public()
+  @ApiOperation({ summary: 'Find by ean' })
   @Get('ean/:ean')
-  @ApiOperation({ summary: 'Get product by EAN code' })
-  findByEan(@Param('ean') ean: string) {
+  getByEan(@Param('ean') ean: string) {
     return this.productsService.findByEan(ean);
   }
-
-  @Patch(':id')
-  @Roles('admin')
-  @ApiOperation({ summary: 'Update product' })
-  update(@Param('id') id: string, @Body() data: UpdateProductDto) {
-    return this.productsService.update(+id, data);
+  @Public()
+  @Get('category/:categoryId')
+  getByCategory(@Param('categoryId', ParseIntPipe) categoryId: number) {
+    return this.productsService.findByCategory(categoryId);
   }
-
-  @Delete(':id')
+  @Public()
+  @Get('subcategory/:subCategoryId')
+  getBySubCategory(
+    @Param('subCategoryId', ParseIntPipe) subCategoryId: number,
+  ) {
+    return this.productsService.findBySubCategory(subCategoryId);
+  }
+  @Public()
+  @Get('subsubcategory/:subSubCategoryId')
+  getBySubSubCategory(
+    @Param('subSubCategoryId', ParseIntPipe) subSubCategoryId: number,
+  ) {
+    return this.productsService.findBySubSubCategory(subSubCategoryId);
+  }
+  @Public()
+  @Get('flag/:flagId')
+  getByFlag(@Param('flagId', ParseIntPipe) flagId: number) {
+    return this.productsService.findByFlag(flagId);
+  }
   @Roles('admin')
-  @ApiOperation({ summary: 'Delete product' })
-  remove(@Param('id') id: string) {
-    return this.productsService.remove(+id);
+  @Get(':uid')
+  findOne(@Param('uid', ParseIntPipe) uid: number) {
+    return this.productsService.findOne(uid);
+  }
+  @Roles('admin')
+  @Patch(':uid')
+  update(
+    @Param('uid', ParseIntPipe) uid: number,
+    @Body() updateProductDto: UpdateProductDto,
+  ) {
+    return this.productsService.update(uid, updateProductDto);
+  }
+  @Roles('admin')
+  @Delete(':uid')
+  remove(@Param('uid', ParseIntPipe) uid: number) {
+    return this.productsService.remove(uid);
   }
 }

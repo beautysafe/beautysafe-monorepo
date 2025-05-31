@@ -6,10 +6,18 @@ import { ConfigModule } from '@nestjs/config';
 import { ProductsModule } from './products/products.module';
 import { UsersModule } from './users/users.module';
 import { AuthModule } from './auth/auth.module';
+import { CategoriesModule } from './categories/categories.module';
+import { SubcategoriesModule } from './subcategories/subcategories.module';
+import { SubsubcategoriesModule } from './subsubcategories/subsubcategories.module';
+import { BrandsModule } from './brands/brands.module';
+import { FlagsModule } from './flags/flags.module';
+import { IngredientsModule } from './ingredients/ingredients.module';
+import { FamiliesModule } from './families/families.module';
+
 import { APP_GUARD } from '@nestjs/core';
 import { RolesGuard } from './common/guards/roles.guard';
-import { AuthGuard } from '@nestjs/passport';
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
+
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
@@ -26,6 +34,13 @@ import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
     ProductsModule,
     UsersModule,
     AuthModule,
+    CategoriesModule,
+    SubcategoriesModule,
+    SubsubcategoriesModule,
+    BrandsModule,
+    FlagsModule,
+    IngredientsModule,
+    FamiliesModule,
   ],
   providers: [
     AppService,

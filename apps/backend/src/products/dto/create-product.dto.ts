@@ -1,27 +1,69 @@
+import {
+  IsString,
+  IsNotEmpty,
+  IsEnum,
+  IsNumber,
+  IsArray,
+  IsOptional,
+} from 'class-validator';
+import { ProductType } from '../entities/product.entity';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class CreateProductDto {
-  @ApiProperty({ type: [String] })
-  eans: string[];
-
   @ApiProperty()
+  @IsString()
+  @IsNotEmpty()
   name: string;
 
   @ApiProperty()
-  brand: string;
+  @IsNumber()
+  validScore: number;
 
   @ApiProperty()
-  validation_score: number;
+  @IsString()
+  @IsNotEmpty()
+  ean: string;
 
   @ApiProperty()
-  score: number;
+  @IsEnum(ProductType)
+  type: ProductType;
 
-  @ApiProperty({ type: 'object', nullable: true, additionalProperties: true })
-  categories?: any;
+  @ApiProperty()
+  @IsNumber()
+  brandId: number;
 
-  @ApiProperty({ type: 'object', nullable: true, additionalProperties: true })
-  compositions?: any;
+  @ApiProperty()
+  @IsOptional()
+  @IsNumber()
+  categoryId?: number;
 
-  @ApiProperty({ type: 'object', nullable: true, additionalProperties: true })
-  images?: any;
+  @ApiProperty()
+  @IsOptional()
+  @IsNumber()
+  subCategoryId?: number;
+  
+  @ApiProperty()
+  @IsOptional()
+  @IsNumber()
+  subSubCategoryId?: number;
+
+  @ApiProperty()
+  @IsArray()
+  @IsOptional()
+  imageUrls?: string[];
+
+  @ApiProperty()
+  @IsArray()
+  @IsOptional()
+  thumbnailUrls?: string[];
+
+  @ApiProperty()
+  @IsArray()
+  @IsOptional()
+  compositionIds?: number[];
+
+  @ApiProperty()
+  @IsArray()
+  @IsOptional()
+  flagIds?: number[];
 }
