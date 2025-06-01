@@ -63,6 +63,13 @@ export class ProductsController {
     return this.productsService.findBySubSubCategory(subSubCategoryId);
   }
   @Public()
+  @Get('brand/:brandId')
+  getByBrand(
+    @Param('brandId', ParseIntPipe) brandId: number,
+  ) {
+    return this.productsService.findByBrand(brandId);
+  }
+  @Public()
   @Get('flag/:flagId')
   getByFlag(@Param('flagId', ParseIntPipe) flagId: number) {
     return this.productsService.findByFlag(flagId);
@@ -85,4 +92,5 @@ export class ProductsController {
   remove(@Param('uid', ParseIntPipe) uid: number) {
     return this.productsService.remove(uid);
   }
+ 
 }

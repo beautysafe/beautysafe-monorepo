@@ -35,13 +35,23 @@ export class ProductsService {
 
   async create(createProductDto: CreateProductDto) {
     const {
-      name, validScore, ean, type,
-      brandId, categoryId, subCategoryId, subSubCategoryId,
-      imageUrls = [], thumbnailUrls = [],
-      compositionIds = [], flagIds = [],
+      name,
+      validScore,
+      ean,
+      type,
+      brandId,
+      categoryId,
+      subCategoryId,
+      subSubCategoryId,
+      imageUrls = [],
+      thumbnailUrls = [],
+      compositionIds = [],
+      flagIds = [],
     } = createProductDto;
 
-    const brand = await this.brandsRepository.findOne({ where: { id: brandId } });
+    const brand = await this.brandsRepository.findOne({
+      where: { id: brandId },
+    });
     if (!brand) throw new NotFoundException('Brand not found');
 
     let category: Category | null = null;
@@ -49,32 +59,45 @@ export class ProductsService {
     let subSubCategory: SubSubCategory | null = null;
 
     if (categoryId) {
-      category = await this.categoriesRepository.findOne({ where: { id: categoryId } });
+      category = await this.categoriesRepository.findOne({
+        where: { id: categoryId },
+      });
       if (!category) throw new NotFoundException('Category not found');
     }
     if (subCategoryId) {
-      subCategory = await this.subCategoriesRepository.findOne({ where: { id: subCategoryId } });
+      subCategory = await this.subCategoriesRepository.findOne({
+        where: { id: subCategoryId },
+      });
       if (!subCategory) throw new NotFoundException('SubCategory not found');
     }
     if (subSubCategoryId) {
-      subSubCategory = await this.subSubCategoriesRepository.findOne({ where: { id: subSubCategoryId } });
-      if (!subSubCategory) throw new NotFoundException('SubSubCategory not found');
+      subSubCategory = await this.subSubCategoriesRepository.findOne({
+        where: { id: subSubCategoryId },
+      });
+      if (!subSubCategory)
+        throw new NotFoundException('SubSubCategory not found');
     }
 
-    const composition = compositionIds.length > 0
-      ? await this.ingredientsRepository.find({ where: { id: In(compositionIds) } })
-      : [];
+    const composition =
+      compositionIds.length > 0
+        ? await this.ingredientsRepository.find({
+            where: { id: In(compositionIds) },
+          })
+        : [];
 
-    const flags = flagIds.length > 0
-      ? await this.flagsRepository.find({ where: { id: In(flagIds) } })
-      : [];
+    const flags =
+      flagIds.length > 0
+        ? await this.flagsRepository.find({ where: { id: In(flagIds) } })
+        : [];
 
-    const images: ProductImage[] = (imageUrls.length > 0 ? imageUrls : []).map((imgUrl, i) => {
-      return this.productImagesRepository.create({
-        image: imgUrl,
-        thumbnail: thumbnailUrls[i] || imgUrl,
-      });
-    });
+    const images: ProductImage[] = (imageUrls.length > 0 ? imageUrls : []).map(
+      (imgUrl, i) => {
+        return this.productImagesRepository.create({
+          image: imgUrl,
+          thumbnail: thumbnailUrls[i] || imgUrl,
+        });
+      },
+    );
 
     const product = this.productsRepository.create({
       name,
@@ -107,7 +130,9 @@ export class ProductsService {
     const product = await this.findOne(uid);
 
     if (updateProductDto.brandId) {
-      const brand = await this.brandsRepository.findOne({ where: { id: updateProductDto.brandId } });
+      const brand = await this.brandsRepository.findOne({
+        where: { id: updateProductDto.brandId },
+      });
       if (!brand) throw new NotFoundException('Brand not found');
       product.brand = brand;
     }
@@ -115,7 +140,9 @@ export class ProductsService {
       if (updateProductDto.categoryId === null) {
         product.category = null;
       } else {
-        const category = await this.categoriesRepository.findOne({ where: { id: updateProductDto.categoryId } });
+        const category = await this.categoriesRepository.findOne({
+          where: { id: updateProductDto.categoryId },
+        });
         if (!category) throw new NotFoundException('Category not found');
         product.category = category;
       }
@@ -124,7 +151,9 @@ export class ProductsService {
       if (updateProductDto.subCategoryId === null) {
         product.subCategory = null;
       } else {
-        const subCategory = await this.subCategoriesRepository.findOne({ where: { id: updateProductDto.subCategoryId } });
+        const subCategory = await this.subCategoriesRepository.findOne({
+          where: { id: updateProductDto.subCategoryId },
+        });
         if (!subCategory) throw new NotFoundException('SubCategory not found');
         product.subCategory = subCategory;
       }
@@ -133,26 +162,35 @@ export class ProductsService {
       if (updateProductDto.subSubCategoryId === null) {
         product.subSubCategory = null;
       } else {
-        const subSubCategory = await this.subSubCategoriesRepository.findOne({ where: { id: updateProductDto.subSubCategoryId } });
-        if (!subSubCategory) throw new NotFoundException('SubSubCategory not found');
+        const subSubCategory = await this.subSubCategoriesRepository.findOne({
+          where: { id: updateProductDto.subSubCategoryId },
+        });
+        if (!subSubCategory)
+          throw new NotFoundException('SubSubCategory not found');
         product.subSubCategory = subSubCategory;
       }
     }
 
     if (updateProductDto.compositionIds) {
-      product.composition = await this.ingredientsRepository.find({ where: { id: In(updateProductDto.compositionIds) } });
+      product.composition = await this.ingredientsRepository.find({
+        where: { id: In(updateProductDto.compositionIds) },
+      });
     }
     if (updateProductDto.flagIds) {
-      product.flags = await this.flagsRepository.find({ where: { id: In(updateProductDto.flagIds) } });
+      product.flags = await this.flagsRepository.find({
+        where: { id: In(updateProductDto.flagIds) },
+      });
     }
     if (updateProductDto.imageUrls || updateProductDto.thumbnailUrls) {
       await this.productImagesRepository.delete({ product: { uid } });
-      const images: ProductImage[] = (updateProductDto.imageUrls ?? []).map((imgUrl, i) => {
-        return this.productImagesRepository.create({
-          image: imgUrl,
-          thumbnail: (updateProductDto.thumbnailUrls ?? [])[i] || imgUrl,
-        });
-      });
+      const images: ProductImage[] = (updateProductDto.imageUrls ?? []).map(
+        (imgUrl, i) => {
+          return this.productImagesRepository.create({
+            image: imgUrl,
+            thumbnail: (updateProductDto.thumbnailUrls ?? [])[i] || imgUrl,
+          });
+        },
+      );
       product.images = images;
     }
 
@@ -172,6 +210,11 @@ export class ProductsService {
     return product;
   }
 
+  findByBrand(brand: number) {
+    return this.productsRepository.find({
+      where: { brand: { id: brand } },
+    });
+  }
   findBySubSubCategory(subSubCategoryId: number) {
     return this.productsRepository.find({
       where: { subSubCategory: { id: subSubCategoryId } },
