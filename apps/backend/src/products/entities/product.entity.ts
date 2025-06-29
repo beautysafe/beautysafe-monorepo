@@ -31,7 +31,7 @@ export class Product {
   @Column()
   name: string;
 
-  @Column('float')
+  @Column({ type: 'double precision', default: 0 })
   validScore: number;
 
   @Column({ unique: true })
@@ -43,7 +43,7 @@ export class Product {
   @ManyToOne(() => Brand, { eager: true })
   brand: Brand;
 
-   @ManyToOne(() => Category, { eager: true, nullable: true })
+  @ManyToOne(() => Category, { eager: true, nullable: true })
   category: Category | null;
 
   @ManyToOne(() => SubCategory, { eager: true, nullable: true })
@@ -52,7 +52,10 @@ export class Product {
   @ManyToOne(() => SubSubCategory, { eager: true, nullable: true })
   subSubCategory: SubSubCategory | null;
 
-  @OneToMany(() => ProductImage, (image) => image.product, { cascade: true, eager: true  })
+  @OneToMany(() => ProductImage, (image) => image.product, {
+    cascade: true,
+    eager: true,
+  })
   images: ProductImage[];
 
   @ManyToMany(() => Ingredient, { eager: true })
