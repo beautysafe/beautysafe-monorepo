@@ -113,23 +113,30 @@ export class ProductsService {
       flags,
     } as Partial<Product>);
 
-    return this.productsRepository.save(product);
+    const savedProduct = await this.productsRepository.save(product);
+
+    if (category) {
+      category.totalProducts += 1;
+      await this.categoriesRepository.save(category);
+    }
+
+    return savedProduct;
   }
 
   async findAll(page = 1, limit = 10) {
-  const [data, total] = await this.productsRepository.findAndCount({
-    skip: (page - 1) * limit,
-    take: limit,
-    order: { uid: 'DESC' }, // Optional: order newest first
-  });
+    const [data, total] = await this.productsRepository.findAndCount({
+      skip: (page - 1) * limit,
+      take: limit,
+      order: { uid: 'DESC' },
+    });
 
-  return {
-    data,
-    total,
-    page,
-    pageCount: Math.ceil(total / limit),
-  };
-}
+    return {
+      data,
+      total,
+      page,
+      pageCount: Math.ceil(total / limit),
+    };
+  }
 
   async findOne(uid: number) {
     const product = await this.productsRepository.findOne({ where: { uid } });
@@ -139,6 +146,7 @@ export class ProductsService {
 
   async update(uid: number, updateProductDto: UpdateProductDto) {
     const product = await this.findOne(uid);
+    const originalCategoryId = product.category?.id;
 
     if (updateProductDto.brandId) {
       const brand = await this.brandsRepository.findOne({
@@ -147,17 +155,28 @@ export class ProductsService {
       if (!brand) throw new NotFoundException('Brand not found');
       product.brand = brand;
     }
+
     if (updateProductDto.categoryId !== undefined) {
       if (updateProductDto.categoryId === null) {
         product.category = null;
       } else {
-        const category = await this.categoriesRepository.findOne({
+        const newCategory = await this.categoriesRepository.findOne({
           where: { id: updateProductDto.categoryId },
         });
-        if (!category) throw new NotFoundException('Category not found');
-        product.category = category;
+        if (!newCategory) throw new NotFoundException('Category not found');
+        if (originalCategoryId && originalCategoryId !== newCategory.id) {
+          const oldCategory = await this.categoriesRepository.findOne({ where: { id: originalCategoryId } });
+          if (oldCategory) {
+            oldCategory.totalProducts = Math.max(0, oldCategory.totalProducts - 1);
+            await this.categoriesRepository.save(oldCategory);
+          }
+          newCategory.totalProducts += 1;
+          await this.categoriesRepository.save(newCategory);
+        }
+        product.category = newCategory;
       }
     }
+
     if (updateProductDto.subCategoryId !== undefined) {
       if (updateProductDto.subCategoryId === null) {
         product.subCategory = null;
@@ -169,6 +188,7 @@ export class ProductsService {
         product.subCategory = subCategory;
       }
     }
+
     if (updateProductDto.subSubCategoryId !== undefined) {
       if (updateProductDto.subSubCategoryId === null) {
         product.subSubCategory = null;
@@ -187,11 +207,13 @@ export class ProductsService {
         where: { id: In(updateProductDto.compositionIds) },
       });
     }
+
     if (updateProductDto.flagIds) {
       product.flags = await this.flagsRepository.find({
         where: { id: In(updateProductDto.flagIds) },
       });
     }
+
     if (updateProductDto.imageUrls || updateProductDto.thumbnailUrls) {
       await this.productImagesRepository.delete({ product: { uid } });
       const images: ProductImage[] = (updateProductDto.imageUrls ?? []).map(
@@ -212,6 +234,13 @@ export class ProductsService {
   async remove(uid: number) {
     const product = await this.findOne(uid);
     if (!product) throw new NotFoundException('Product not found');
+
+    const category = product.category;
+    if (category) {
+      category.totalProducts = Math.max(0, category.totalProducts - 1);
+      await this.categoriesRepository.save(category);
+    }
+
     return this.productsRepository.remove(product);
   }
 
@@ -226,6 +255,7 @@ export class ProductsService {
       where: { brand: { id: brand } },
     });
   }
+
   findBySubSubCategory(subSubCategoryId: number) {
     return this.productsRepository.find({
       where: { subSubCategory: { id: subSubCategoryId } },
@@ -238,19 +268,22 @@ export class ProductsService {
     });
   }
 
- async findByCategory(categoryId: number, page = 1, limit = 10) {
-  const [data, total] = await this.productsRepository.findAndCount({
-    where: { category: { id: categoryId } },
-    skip: (page - 1) * limit,
-    take: limit,
-    order: { uid: 'DESC' },
-  });
+async findByCategory(categoryId: number, page = 1, limit = 10) {
+  const [category, data] = await Promise.all([
+    this.categoriesRepository.findOne({ where: { id: categoryId } }),
+    this.productsRepository.find({
+      where: { category: { id: categoryId } },
+      skip: (page - 1) * limit,
+      take: limit,
+      order: { uid: 'DESC' },
+    }),
+  ]);
 
   return {
     data,
-    total,
+    total: category?.totalProducts ?? 0,
     page,
-    pageCount: Math.ceil(total / limit),
+    pageCount: category ? Math.ceil(category.totalProducts / limit) : 0,
   };
 }
 

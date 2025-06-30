@@ -13,7 +13,11 @@ export class CategoriesService {
   ) {}
 
   create(createCategoryDto: CreateCategoryDto) {
-    const category = this.categoryRepository.create(createCategoryDto);
+    const category = this.categoryRepository.create({
+      ...createCategoryDto,
+      totalProducts: createCategoryDto.totalProducts ?? 0,
+    });
+
     return this.categoryRepository.save(category);
   }
 
@@ -22,7 +26,10 @@ export class CategoriesService {
   }
 
   findOne(id: number) {
-    return this.categoryRepository.findOne({ where: { id }, relations: ['subcategories'] });
+    return this.categoryRepository.findOne({
+      where: { id },
+      relations: ['subcategories'],
+    });
   }
 
   async update(id: number, updateCategoryDto: UpdateCategoryDto) {

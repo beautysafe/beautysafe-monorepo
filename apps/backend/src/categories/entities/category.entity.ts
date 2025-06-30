@@ -10,6 +10,9 @@ export class Category {
   @Column({ unique: true })
   name: string;
 
+  @Column({ default: 0 })
+  totalProducts: number;
+  
   @OneToMany(() => SubCategory, (subcategory) => subcategory.category)
   subcategories: SubCategory[];
 }
