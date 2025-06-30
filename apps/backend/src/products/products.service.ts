@@ -238,11 +238,21 @@ export class ProductsService {
     });
   }
 
-  findByCategory(categoryId: number) {
-    return this.productsRepository.find({
-      where: { category: { id: categoryId } },
-    });
-  }
+ async findByCategory(categoryId: number, page = 1, limit = 10) {
+  const [data, total] = await this.productsRepository.findAndCount({
+    where: { category: { id: categoryId } },
+    skip: (page - 1) * limit,
+    take: limit,
+    order: { uid: 'DESC' },
+  });
+
+  return {
+    data,
+    total,
+    page,
+    pageCount: Math.ceil(total / limit),
+  };
+}
 
   findByFlag(flagId: number) {
     return this.productsRepository

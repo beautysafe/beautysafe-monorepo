@@ -60,10 +60,15 @@ export class ProductsController {
   getByEan(@Param('ean') ean: string) {
     return this.productsService.findByEan(ean);
   }
-  @Public()
   @Get('category/:categoryId')
-  getByCategory(@Param('categoryId', ParseIntPipe) categoryId: number) {
-    return this.productsService.findByCategory(categoryId);
+  @ApiQuery({ name: 'page', required: false, type: Number })
+  @ApiQuery({ name: 'limit', required: false, type: Number })
+  getByCategory(
+    @Param('categoryId', ParseIntPipe) categoryId: number,
+    @Query('page') page = 1,
+    @Query('limit') limit = 10,
+  ) {
+    return this.productsService.findByCategory(categoryId, +page, +limit);
   }
   @Public()
   @Get('subcategory/:subCategoryId')
