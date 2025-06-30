@@ -38,10 +38,14 @@ export function useProductByEan(ean: string) {
   });
 }
 
-export function useProductsByCategory(categoryId: number | string) {
+export function useProductsByCategory(
+  categoryId: number | string,
+  page: number,
+  limit: number = 10
+) {
   return useQuery({
-    queryKey: ['productsByCategory', categoryId],
-    queryFn: () => getProductsByCategory(categoryId),
+    queryKey: ['productsByCategory', categoryId, page, limit],
+    queryFn: () => getProductsByCategory(categoryId, page, limit),
     enabled: !!categoryId,
   });
 }

@@ -14,9 +14,6 @@ import {
   useProductByEan,
   useProductsByFlag,
   useProductsByCategory,
-  useProductsBySubCategory,
-  useProductsBySubSubCategory,
-  useProducts,
 } from "../../../hooks/useProduct";
 import type { Product } from "../../../lib/entities";
 import { useNavigate, useSearchParams } from "react-router-dom";
@@ -40,7 +37,7 @@ const ProductsList: React.FC = () => {
   const { data: categories = [], isLoading: categoriesLoading } = useCategories();
   const { data: foundProduct, isLoading: isSearching, error: searchError } = useProductByEan(search);
   const { data: productsByFlag } = useProductsByFlag(selectedFlag!);
-  const { data: productsByCategory } = useProductsByCategory(categoryId!);
+  const { data: productsByCategory } = useProductsByCategory(categoryId!, page, limit);
 
   React.useEffect(() => {
     if (searchError) {
@@ -106,8 +103,8 @@ if (search && foundProduct) {
   tableData = productsByFlag;
   total = productsByFlag.length;
 } else if (categoryId && productsByCategory) {
-  tableData = productsByCategory;
-  total = productsByCategory.length;
+  tableData = productsByCategory.data;
+  total = productsByCategory.total;
 }
 
   return (

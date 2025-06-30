@@ -1,6 +1,6 @@
 import React from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Card, Row, Col, Typography, Spin, Empty } from 'antd';
+import { Card, Row, Col, Typography, Spin } from 'antd';
 import { useSubCategoryById } from '../../../hooks/useSubCategory';
 
 const { Title } = Typography;

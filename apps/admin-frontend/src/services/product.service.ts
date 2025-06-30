@@ -28,8 +28,14 @@ export const getProductByEan = (ean: string) =>
   api.get<Product>(`/products/ean/${ean}`);
 
 // Get products by Category
-export const getProductsByCategory = (categoryId: number | string) =>
-  api.get<Product[]>(`/products/category/${categoryId}`);
+export const getProductsByCategory = (
+  categoryId: number | string,
+  page = 1,
+  limit = 10
+) =>
+  api.get<{ data: Product[]; total: number; page: number; pageCount: number }>(
+    `/products/category/${categoryId}?page=${page}&limit=${limit}`
+  );
 
 // Get products by SubCategory
 export const getProductsBySubCategory = (subCategoryId: number | string) =>
