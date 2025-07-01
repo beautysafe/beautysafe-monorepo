@@ -54,22 +54,6 @@ const ProductsList: React.FC = () => {
       render: (brand: { name: string }) => brand?.name || "—",
     },
     { title: "EAN", dataIndex: "ean" },
-    { title: "Type", dataIndex: "type" },
-    {
-      title: "Catégorie",
-      dataIndex: "category",
-      render: (cat: { name: string }) => cat?.name || "—",
-    },
-    {
-      title: "Sous-catégorie",
-      dataIndex: "subCategory",
-      render: (sub: { name: string }) => sub?.name || "—",
-    },
-    {
-      title: "Sous-sous-catégorie",
-      dataIndex: "subSubCategory",
-      render: (subsub: { name: string }) => subsub?.name || "—",
-    },
     { title: "Score", dataIndex: "validScore" },
     {
       title: "Image",
@@ -126,7 +110,7 @@ if (search && foundProduct) {
           <Input.Search
             placeholder="Rechercher par EAN"
             allowClear
-            style={{ width: 230 }}
+            style={{ width: 430 }}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             enterButton="Chercher"
@@ -137,46 +121,6 @@ if (search && foundProduct) {
               setSelectedFlag(undefined);
             }}
           />
-        </Col>
-        <Col>
-          <Select
-            placeholder="Filtrer par catégorie"
-            loading={categoriesLoading}
-            allowClear
-            style={{ width: 180 }}
-            value={selectedCategory}
-            onChange={(val) => {
-              setSelectedCategory(val);
-              setSelectedFlag(undefined);
-              setSearch("");
-            }}
-          >
-            {categories.map((cat) => (
-              <Select.Option key={cat.id} value={cat.id}>
-                {cat.name}
-              </Select.Option>
-            ))}
-          </Select>
-        </Col>
-        <Col>
-          <Select
-            placeholder="Filtrer par flag"
-            loading={flagsLoading}
-            allowClear
-            style={{ width: 180 }}
-            value={selectedFlag}
-            onChange={(val) => {
-              setSelectedFlag(val);
-              setSelectedCategory(undefined);
-              setSearch("");
-            }}
-          >
-            {flags.map((flag) => (
-              <Select.Option key={flag.id} value={flag.id}>
-                {flag.name}
-              </Select.Option>
-            ))}
-          </Select>
         </Col>
         <Col>
           <Button

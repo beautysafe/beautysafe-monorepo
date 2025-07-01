@@ -2,6 +2,7 @@ import React from "react";
 import { Form, Input, InputNumber, Button, Space, Divider } from "antd";
 import { MinusCircleOutlined, PlusOutlined } from "@ant-design/icons";
 import type { Product} from "../../../lib/entities";
+import FormItemLabel from "antd/es/form/FormItemLabel";
 
 interface EditProductFormProps {
   initialValues: Partial<Product>;
@@ -147,7 +148,7 @@ const EditProductForm: React.FC<EditProductFormProps> = ({
                   name={[name, "score"]}
                   rules={[{ required: false }]}
                 >
-                  <InputNumber placeholder="Score" />
+                  <InputNumber placeholder="Score" style={{ width: "100%" }} />
                 </Form.Item>
                 <Button
                   type="link"

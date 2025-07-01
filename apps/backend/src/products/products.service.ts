@@ -165,9 +165,14 @@ export class ProductsService {
         });
         if (!newCategory) throw new NotFoundException('Category not found');
         if (originalCategoryId && originalCategoryId !== newCategory.id) {
-          const oldCategory = await this.categoriesRepository.findOne({ where: { id: originalCategoryId } });
+          const oldCategory = await this.categoriesRepository.findOne({
+            where: { id: originalCategoryId },
+          });
           if (oldCategory) {
-            oldCategory.totalProducts = Math.max(0, oldCategory.totalProducts - 1);
+            oldCategory.totalProducts = Math.max(
+              0,
+              oldCategory.totalProducts - 1,
+            );
             await this.categoriesRepository.save(oldCategory);
           }
           newCategory.totalProducts += 1;
@@ -268,30 +273,56 @@ export class ProductsService {
     });
   }
 
-async findByCategory(categoryId: number, page = 1, limit = 10) {
-  const [category, data] = await Promise.all([
-    this.categoriesRepository.findOne({ where: { id: categoryId } }),
-    this.productsRepository.find({
-      where: { category: { id: categoryId } },
-      skip: (page - 1) * limit,
-      take: limit,
-      order: { uid: 'DESC' },
-    }),
-  ]);
+  async findByCategory(categoryId: number, page = 1, limit = 10) {
+    const [category, data] = await Promise.all([
+      this.categoriesRepository.findOne({ where: { id: categoryId } }),
 
-  return {
-    data,
-    total: category?.totalProducts ?? 0,
-    page,
-    pageCount: category ? Math.ceil(category.totalProducts / limit) : 0,
-  };
-}
+      this.productsRepository
+        .createQueryBuilder('product')
+        .leftJoinAndSelect('product.images', 'images')
+        .leftJoinAndSelect('product.brand', 'brand')
+        .where('product.categoryId = :categoryId', { categoryId })
+        .orderBy('product.uid', 'DESC')
+        .skip((page - 1) * limit)
+        .take(limit)
+        .getMany(),
+    ]);
+    return {
+      data,
+      total: category?.totalProducts ?? 0,
 
+      page,
+      pageCount: category ? Math.ceil(category.totalProducts / limit) : 0,
+    };
+  }
   findByFlag(flagId: number) {
     return this.productsRepository
       .createQueryBuilder('product')
       .leftJoin('product.flags', 'flag')
       .where('flag.id = :flagId', { flagId })
       .getMany();
+  }
+  async findByCategoryWithFlag(
+    categoryId: number,
+    flagId: number = 1,
+    page: number = 1,
+    limit: number = 10,
+  ) {
+    const data = await this.productsRepository
+      .createQueryBuilder('product')
+      .leftJoin('product.flags', 'flag')
+      .leftJoin('product.category', 'category')
+      .leftJoinAndSelect('product.images', 'images')
+      .where('category.id = :categoryId', { categoryId })
+      .andWhere('flag.id = :flagId', { flagId })
+      .orderBy('product.uid', 'DESC')
+      .skip((page - 1) * limit)
+      .take(limit)
+      .getMany();
+
+    return {
+      data,
+      page,
+    };
   }
 }

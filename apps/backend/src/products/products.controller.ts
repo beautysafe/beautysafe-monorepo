@@ -94,6 +94,18 @@ export class ProductsController {
   getByFlag(@Param('flagId', ParseIntPipe) flagId: number) {
     return this.productsService.findByFlag(flagId);
   }
+  @Public()
+  @Get('category/:id/flagged')
+  @ApiQuery({ name: 'page', required: false, type: Number })
+  @ApiQuery({ name: 'limit', required: false, type: Number })
+  getProductsByCategoryWithFlag(
+    @Param('id', ParseIntPipe) id: number,
+    @Query('page') page = 1,
+    @Query('limit') limit = 10,
+  ) {
+    return this.productsService.findByCategoryWithFlag(id, 1, +page, +limit);
+  }
+
   @Roles('admin')
   @Get(':uid')
   findOne(@Param('uid', ParseIntPipe) uid: number) {
