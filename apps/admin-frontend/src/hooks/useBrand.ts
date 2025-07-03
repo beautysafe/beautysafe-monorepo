@@ -9,8 +9,11 @@ import {
 } from '../services/brand.service';
 import type { Brand } from '../lib/entities';
 
-export function useBrands() {
-  return useQuery({ queryKey: ['brands'], queryFn: listBrands });
+export function useBrands(page: number, limit: number = 20) {
+  return useQuery({ 
+    queryKey: ['brands', page, limit], 
+    queryFn: () => listBrands(page, limit) 
+  });
 }
 
 export function useBrandById(id: number | string) {

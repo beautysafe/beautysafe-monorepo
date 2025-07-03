@@ -1,8 +1,8 @@
 import type { Brand } from '../lib/entities';
 import { api } from '../lib/api/api-client';
 
-export async function listBrands(): Promise<Brand[]> {
-  return api.get('/brands');
+export async function listBrands(page: number = 1, limit: number = 20): Promise<Brand[]> {
+  return api.get(`/brands?page=${page}&limit=${limit}`);
 }
 
 export async function getBrandById(id: number | string): Promise<Brand> {

@@ -17,6 +17,7 @@ import NotFound from "./pages/not-found";
 import ComingSoon from "./pages/dashboard/coming-soon";
 import "./App.css";
 import IngredientsList from "./pages/dashboard/ingreddients/list-ingreddients";
+import BrandsList from "./pages/dashboard/brands/list-brands";
 
 const queryClient = new QueryClient();
 
@@ -46,6 +47,10 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
               <Route
                 path="ingredients"
                 element={<IngredientsList />}
+              />
+              <Route
+                path="brands"
+                element={<BrandsList />}
               />
             </Route>
           </Route>

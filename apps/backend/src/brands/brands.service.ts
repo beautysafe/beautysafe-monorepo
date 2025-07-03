@@ -22,8 +22,13 @@ export class BrandsService {
     return this.brandRepository.save(brand);
   }
 
-  findAll() {
-    return this.brandRepository.find();
+  findAll(page = 1, limit = 100) {
+    const skip = (page - 1) * limit;
+
+    return this.brandRepository.find({
+      skip,
+      take: limit,
+    });
   }
 
   findOne(id: number) {

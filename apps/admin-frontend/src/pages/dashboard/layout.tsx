@@ -35,7 +35,7 @@ const menuItems = [
   {
     key: "brands",
     icon: <TagsOutlined />,
-    label: <Link to="/dashboard/coming-soon">Marques</Link>,
+    label: <Link to="/dashboard/brands">Marques</Link>,
   },
   {
     key: "announcements",

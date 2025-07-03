@@ -12,7 +12,12 @@ import {
 import { BrandsService } from './brands.service';
 import { CreateBrandDto } from './dto/create-brand.dto';
 import { UpdateBrandDto } from './dto/update-brand.dto';
-import { ApiBearerAuth, ApiTags, ApiOperation } from '@nestjs/swagger';
+import {
+  ApiBearerAuth,
+  ApiTags,
+  ApiOperation,
+  ApiQuery,
+} from '@nestjs/swagger';
 
 @ApiBearerAuth()
 @ApiTags('brands')
@@ -30,8 +35,10 @@ export class BrandsController {
     return this.brandsService.searchByName(query);
   }
   @Get()
-  findAll() {
-    return this.brandsService.findAll();
+  @ApiQuery({ name: 'page', required: false, type: Number })
+  @ApiQuery({ name: 'limit', required: false, type: Number })
+  findAll(@Query('page') page = 1, @Query('limit') limit = 10) {
+    return this.brandsService.findAll(+page, +limit);
   }
 
   @Get(':id')
