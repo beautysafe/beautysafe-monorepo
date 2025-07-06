@@ -119,7 +119,10 @@ export class ProductsService {
       category.totalProducts += 1;
       await this.categoriesRepository.save(category);
     }
-
+    if (brand) {
+      brand.totalProducts += 1;
+      await this.brandsRepository.save(brand);
+    }
     return savedProduct;
   }
 
@@ -255,12 +258,67 @@ export class ProductsService {
     return product;
   }
 
-  findByBrand(brand: number) {
-    return this.productsRepository.find({
-      where: { brand: { id: brand } },
-    });
-  }
+async findByBrand(brandId: number, page = 1, limit = 10) {
+  const total = await this.productsRepository.count({ where: { brand: { id: brandId } } });
+  const products = await this.productsRepository
+    .createQueryBuilder('product')
+    .leftJoin('product.images', 'images')
+    .select([
+      'product.uid',
+      'product.name',
+      'product.validScore',
+      'product.ean',
+      'images.id',
+      'images.thumbnail'
+    ])
+    .where('product.brandId = :brandId', { brandId })
+    .orderBy('product.uid', 'DESC')
+    .skip((page - 1) * limit)
+    .take(limit)
+    .getMany();
 
+  const data = products.map(product => ({
+    uid: product.uid,
+    name: product.name,
+    validScore: product.validScore,
+    ean: product.ean,
+    images: product.images?.map(img => ({
+      id: img.id,
+      thumbnail: img.thumbnail,
+    })) || [],
+  }));
+
+  return {
+    data,
+    total,
+    page,
+    pageCount: Math.ceil(total / limit),
+  };
+}
+
+
+  async findByCatesgory(categoryId: number, page = 1, limit = 10) {
+    const [category, data] = await Promise.all([
+      this.categoriesRepository.findOne({ where: { id: categoryId } }),
+
+      this.productsRepository
+        .createQueryBuilder('product')
+        .leftJoinAndSelect('product.images', 'images')
+        .leftJoinAndSelect('product.brand', 'brand')
+        .where('product.categoryId = :categoryId', { categoryId })
+        .orderBy('product.uid', 'DESC')
+        .skip((page - 1) * limit)
+        .take(limit)
+        .getMany(),
+    ]);
+    return {
+      data,
+      total: category?.totalProducts ?? 0,
+
+      page,
+      pageCount: category ? Math.ceil(category.totalProducts / limit) : 0,
+    };
+  }
   findBySubSubCategory(subSubCategoryId: number) {
     return this.productsRepository.find({
       where: { subSubCategory: { id: subSubCategoryId } },

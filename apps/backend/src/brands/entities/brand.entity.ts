@@ -7,4 +7,7 @@ export class Brand {
 
   @Column({ unique: true })
   name: string;
+
+  @Column({ default: 0 })
+  totalProducts: number;
 }

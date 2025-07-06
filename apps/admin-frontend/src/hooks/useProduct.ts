@@ -10,6 +10,7 @@ import {
   createProduct,
   updateProduct,
   deleteProduct,
+  getProductsByBrand,
 } from '../services/product.service';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import type { Product } from '../lib/entities';
@@ -73,9 +74,13 @@ export function useProductsByFlag(flagId: number | string) {
     enabled: !!flagId,
   });
 }
-
-// --- Mutations ---
-
+export function useProductsByBrand(brandId: number | string, page: number, limit: number = 10) {
+  return useQuery({
+    queryKey: ['productsByBrand', brandId, page, limit],
+    queryFn: () => getProductsByBrand(brandId, page, limit),
+    enabled: !!brandId,
+  });
+}
 export function useCreateProduct() {
   const queryClient = useQueryClient();
   return useMutation({

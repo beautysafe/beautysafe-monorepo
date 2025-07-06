@@ -1,6 +1,7 @@
 export interface Brand {
   id: number;
   name: string;
+  totalProducts: number;
 }
 
 export interface Category {
@@ -41,8 +42,7 @@ export interface Flag {
   name: string;
 }
 
-export type ProductType = 'Men' | 'Women' | 'Child' | 'Baby';
-
+export type ProductType = "Men" | "Women" | "Child" | "Baby";
 
 export interface ProductImage {
   id: number;

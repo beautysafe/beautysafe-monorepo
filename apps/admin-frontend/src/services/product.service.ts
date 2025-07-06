@@ -48,3 +48,13 @@ export const getProductsBySubSubCategory = (subSubCategoryId: number | string) =
 // Get products by Flag
 export const getProductsByFlag = (flagId: number | string) =>
   api.get<Product[]>(`/products/flag/${flagId}`);
+
+// Get products by Brand 
+export const getProductsByBrand = (
+  brandId: number | string,
+  page = 1,
+  limit = 10
+) =>
+  api.get<{ data: Product[]; total: number; page: number; pageCount: number }>(
+    `/products/brand/${brandId}?page=${page}&limit=${limit}`
+  );

@@ -23,7 +23,7 @@ const BrandsList: React.FC = () => {
   const brands = search
     ? (Array.isArray(searchResults) ? searchResults : [])
     : (Array.isArray(data) ? data : []);
-  const total = search ? brands.length : 14000;
+  const total = search ? brands.length : 14047;
 
   const columns = [
     {
@@ -31,8 +31,19 @@ const BrandsList: React.FC = () => {
       dataIndex: "name",
       key: "name",
       render: (_: string, record: Brand) => (
-        <a onClick={() => navigate(`/dashboard/products?brandId=${record.id}`)} style={{ fontWeight: 500 }}>
+        <a onClick={() => navigate(`/dashboard/brands/${record.id}`)} style={{ fontWeight: 500 }}>
           {record.name}
+        </a>
+      ),
+
+    },
+        {
+      title: "Total des produits",
+      dataIndex: "totalProducts",
+      key: "totalProducts",
+      render: (_: string, record: Brand) => (
+        <a onClick={() => navigate(`/dashboard/products?brandId=${record.id}`)} style={{ fontWeight: 500 }}>
+          {record.totalProducts}
         </a>
       ),
     },

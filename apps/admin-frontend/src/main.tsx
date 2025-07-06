@@ -18,6 +18,7 @@ import ComingSoon from "./pages/dashboard/coming-soon";
 import "./App.css";
 import IngredientsList from "./pages/dashboard/ingreddients/list-ingreddients";
 import BrandsList from "./pages/dashboard/brands/list-brands";
+import ProductsByBrand from "./pages/dashboard/brands/list-product-by-brand";
 
 const queryClient = new QueryClient();
 
@@ -39,7 +40,7 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
               <Route
                 path="categories/:categoryId"
                 element={<SubCategoriesPage />}
-              />
+              />              
               <Route
                 path="subcategories/:subCategoryId"
                 element={<SubSubCategoriesPage />}
@@ -52,9 +53,14 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
                 path="brands"
                 element={<BrandsList />}
               />
+              <Route
+                path="brands/:brandId"
+                element={<ProductsByBrand />}
+              />    
+          
             </Route>
           </Route>
-          <Route path="*" element={<Navigate to="/login" />} />
+          <Route path="/login" element={<Navigate to="/login" />} />
         </Routes>
       </BrowserRouter>
     </QueryClientProvider>

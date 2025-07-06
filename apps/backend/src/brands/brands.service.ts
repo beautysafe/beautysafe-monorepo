@@ -28,6 +28,9 @@ export class BrandsService {
     return this.brandRepository.find({
       skip,
       take: limit,
+      order: {
+      totalProducts: 'DESC',
+    },
     });
   }
 
