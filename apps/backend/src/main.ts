@@ -6,11 +6,19 @@ import { ValidationPipe } from '@nestjs/common';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   app.useGlobalPipes(new ValidationPipe());
-    app.enableCors({
-      origin: [
-    'http://localhost:5173',
-    'https://beauty-safe-monorepo-1.onrender.com'
-  ],
+  app.enableCors({
+    origin: (origin, callback) => {
+      if (!origin) return callback(null, true);
+
+      const onrenderPattern = /^https?:\/\/([a-zA-Z0-9-]+\.)*onrender\.com(?::\d+)?$/;
+      const localhostPattern = /^http:\/\/localhost(?::\d+)?$/;
+      const lemsaPattern = /^https:\/\/([a-zA-Z0-9-]+\.)*lemsainnovation\.com(?::\d+)?$/;
+      if (onrenderPattern.test(origin) || localhostPattern.test(origin) || lemsaPattern.test(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error('Not allowed by CORS'));
+      }
+    },
     credentials: true,
   });
 

@@ -1,14 +1,23 @@
 import React, { useEffect, useState } from "react";
-import { Form, Input, Button, Select, InputNumber, Divider, Space, message } from "antd";
+import {
+  Form,
+  Input,
+  Button,
+  Select,
+  InputNumber,
+  Divider,
+  Space,
+  message,
+} from "antd";
 import { PlusOutlined, MinusCircleOutlined } from "@ant-design/icons";
 import { useCreateProduct } from "../../../hooks/useProduct";
 import { useFlags } from "../../../hooks/useFlag";
-import { useCategories } from "../../../hooks/useCategory";
+import { useCategories, useCategoryById } from "../../../hooks/useCategory";
 import { useSubCategoryById } from "../../../hooks/useSubCategory";
 import { useSubSubCategoryById } from "../../../hooks/useSubSubCategory";
 import { useSearchBrands } from "../../../hooks/useBrand";
 import { useSearchIngredients } from "../../../hooks/useIngredient";
-import type { SubCategory, SubSubCategory } from "../../../lib/entities";
+import type { Category, SubSubCategory } from "../../../lib/entities";
 
 const { Option } = Select;
 
@@ -26,33 +35,43 @@ const CreateProductForm: React.FC<CreateProductFormProps> = ({}) => {
 
   // Brand search
   const [brandSearch, setBrandSearch] = useState("");
-  const { data: brands = [], isLoading: brandsLoading } = useSearchBrands(brandSearch);
+  const { data: brands = [], isLoading: brandsLoading } =
+    useSearchBrands(brandSearch);
 
   // Ingredient search
   const [ingredientSearch, setIngredientSearch] = useState("");
-  const { data: ingredients = [], isLoading: ingredientsLoading } = useSearchIngredients(ingredientSearch);
+  const { data: ingredients = [], isLoading: ingredientsLoading } =
+    useSearchIngredients(ingredientSearch);
 
   // Category selects
   const { data: categories = [] } = useCategories();
-  const { data: subCategories = [] } = useSubCategoryById(
+  const { data: rawCategory } = useCategoryById(
     selectedCategory !== undefined ? selectedCategory : ""
   );
-  const { data: subSubCategories = [] } = useSubSubCategoryById(selectedSubCategory !== undefined ? selectedSubCategory : "");
-
+  const subCategories = rawCategory?.subcategories ?? [];
+  const { data: rawSubCategory } = useSubCategoryById(
+    selectedSubCategory !== undefined ? selectedSubCategory : ""
+  );
+  const subSubCategories = rawSubCategory?.subsubcategories ?? [];
   // Flags
   const { data: flags = [] } = useFlags();
 
   // Handle category change to reset subcategory and subsubcategory
   useEffect(() => {
     setSelectedSubCategory(undefined);
-    form.setFieldsValue({ subCategoryId: undefined, subSubCategoryId: undefined });
+    form.setFieldsValue({
+      subCategoryId: undefined,
+      subSubCategoryId: undefined,
+    });
   }, [selectedCategory, form]);
 
   // Handle submit
   const onFinish = (values: any) => {
     // Images: [{ image, thumbnail }] => separate arrays for API
     const imageUrls = (values.images || []).map((img: any) => img.image);
-    const thumbnailUrls = (values.images || []).map((img: any) => img.thumbnail || img.image);
+    const thumbnailUrls = (values.images || []).map(
+      (img: any) => img.thumbnail || img.image
+    );
     const payload = {
       ...values,
       imageUrls,
@@ -87,7 +106,9 @@ const CreateProductForm: React.FC<CreateProductFormProps> = ({}) => {
           onSearch={setBrandSearch}
         >
           {brands.map((brand: any) => (
-            <Option key={brand.id} value={brand.id}>{brand.name}</Option>
+            <Option key={brand.id} value={brand.id}>
+              {brand.name}
+            </Option>
           ))}
         </Select>
       </Form.Item>
@@ -106,37 +127,42 @@ const CreateProductForm: React.FC<CreateProductFormProps> = ({}) => {
         </Select>
       </Form.Item>
       {/* Cascading Category Selects */}
-      <Form.Item name="categoryId" label="Catégorie" rules={[{ required: true }]}>
+      <Form.Item
+        name="categoryId"
+        label="Catégorie"
+        rules={[{ required: true }]}
+      >
         <Select
           placeholder="Choisir une catégorie"
-          onChange={val => setSelectedCategory(val)}
+          onChange={(val) => setSelectedCategory(val)}
           allowClear
         >
-          {categories.map(cat => (
-            <Option key={cat.id} value={cat.id}>{cat.name}</Option>
+          {categories.map((cat) => (
+            <Option key={cat.id} value={cat.id}>
+              {cat.name}
+            </Option>
           ))}
         </Select>
       </Form.Item>
       <Form.Item name="subCategoryId" label="Sous-catégorie">
         <Select
           placeholder="Choisir une sous-catégorie"
-          onChange={val => setSelectedSubCategory(val)}
-          value={selectedSubCategory}
+          onChange={(val) => setSelectedSubCategory(val)}
           allowClear
         >
-          {(Array.isArray(subCategories) ? subCategories : []).map((sub: SubCategory) => (
-
-            <Option key={sub.id} value={sub.id}>{sub.name}</Option>
+          {subCategories.map((sub: any) => (
+            <Option key={sub.id} value={sub.id}>
+              {sub.name}
+            </Option>
           ))}
         </Select>
       </Form.Item>
       <Form.Item name="subSubCategoryId" label="Sous-sous-catégorie">
-        <Select
-          placeholder="Choisir une sous-sous-catégorie"
-          allowClear
-        >
-          {(Array.isArray(subSubCategories) ? subSubCategories : []).map((subsub: SubSubCategory) => (
-            <Option key={subsub.id} value={subsub.id}>{subsub.name}</Option>
+        <Select placeholder="Choisir une sous-sous-catégorie" allowClear>
+          {subSubCategories.map((subsub: any) => (
+            <Option key={subsub.id} value={subsub.id}>
+              {subsub.name}
+            </Option>
           ))}
         </Select>
       </Form.Item>
@@ -162,12 +188,11 @@ const CreateProductForm: React.FC<CreateProductFormProps> = ({}) => {
 
       {/* Flags (optional) */}
       <Form.Item name="flagIds" label="Flags">
-        <Select
-          mode="multiple"
-          placeholder="Sélectionner les flags"
-        >
+        <Select mode="multiple" placeholder="Sélectionner les flags">
           {flags.map((flag: any) => (
-            <Option key={flag.id} value={flag.id}>{flag.name}</Option>
+            <Option key={flag.id} value={flag.id}>
+              {flag.name}
+            </Option>
           ))}
         </Select>
       </Form.Item>
@@ -178,11 +203,17 @@ const CreateProductForm: React.FC<CreateProductFormProps> = ({}) => {
         {(fields, { add, remove }) => (
           <>
             {fields.map(({ key, name, ...restField }) => (
-              <Space key={key} style={{ display: "flex", marginBottom: 8 }} align="baseline">
+              <Space
+                key={key}
+                style={{ display: "flex", marginBottom: 8 }}
+                align="baseline"
+              >
                 <Form.Item
                   {...restField}
                   name={[name, "image"]}
-                  rules={[{ required: true, message: "URL de l'image requise" }]}
+                  rules={[
+                    { required: true, message: "URL de l'image requise" },
+                  ]}
                 >
                   <Input placeholder="URL image" />
                 </Form.Item>
@@ -193,11 +224,21 @@ const CreateProductForm: React.FC<CreateProductFormProps> = ({}) => {
                 >
                   <Input placeholder="URL thumbnail (optionnel)" />
                 </Form.Item>
-                <Button type="link" danger icon={<MinusCircleOutlined />} onClick={() => remove(name)} />
+                <Button
+                  type="link"
+                  danger
+                  icon={<MinusCircleOutlined />}
+                  onClick={() => remove(name)}
+                />
               </Space>
             ))}
             <Form.Item>
-              <Button type="dashed" onClick={() => add()} icon={<PlusOutlined />} block>
+              <Button
+                type="dashed"
+                onClick={() => add()}
+                icon={<PlusOutlined />}
+                block
+              >
                 Ajouter une image
               </Button>
             </Form.Item>
@@ -206,7 +247,12 @@ const CreateProductForm: React.FC<CreateProductFormProps> = ({}) => {
       </Form.List>
 
       <Form.Item>
-        <Button type="primary" htmlType="submit" loading={createProduct.isPending} block>
+        <Button
+          type="primary"
+          htmlType="submit"
+          loading={createProduct.isPending}
+          block
+        >
           Créer le produit
         </Button>
       </Form.Item>
