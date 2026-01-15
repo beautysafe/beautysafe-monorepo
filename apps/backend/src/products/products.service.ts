@@ -130,17 +130,22 @@ export class ProductsService {
   }
 
   async findAll(page = 1, limit = 10) {
-    const [data, total] = await this.productsRepository.findAndCount({
-      skip: (page - 1) * limit,
-      take: limit,
+    const take = Math.min(Math.max(limit, 1), 50);
+    const skip = (page - 1) * take;
+  
+    const data = await this.productsRepository.find({
+      skip,
+      take,
       order: { uid: 'DESC' },
     });
-
+  
+    const total = await this.productsRepository.count(); // base table count only
+  
     return {
       data,
       total,
       page,
-      pageCount: Math.ceil(total / limit),
+      pageCount: Math.ceil(total / take),
     };
   }
 
@@ -151,15 +156,9 @@ export class ProductsService {
   }
 
   async update(uid: number, updateProductDto: UpdateProductDto) {
-    const product = await this.productsRepository.findOne({
-      where: { uid },
-      relations: ['category', 'flags'],
-    });
-    if (!product) throw new NotFoundException('Product not found');
-  
-    const originalCategoryId = product.category?.id ?? null;
-    const originalFlagIds = (product.flags ?? []).map((f) => f.id);
-  
+    const product = await this.findOne(uid);
+    const originalCategoryId = product.category?.id;
+
     if (updateProductDto.brandId) {
       const brand = await this.brandsRepository.findOne({
         where: { id: updateProductDto.brandId },
@@ -167,43 +166,33 @@ export class ProductsService {
       if (!brand) throw new NotFoundException('Brand not found');
       product.brand = brand;
     }
-  
+
     if (updateProductDto.categoryId !== undefined) {
       if (updateProductDto.categoryId === null) {
-        if (originalCategoryId) {
-          const oldCategory = await this.categoriesRepository.findOne({
-            where: { id: originalCategoryId },
-          });
-          if (oldCategory) {
-            oldCategory.totalProducts = Math.max(0, oldCategory.totalProducts - 1);
-            await this.categoriesRepository.save(oldCategory);
-          }
-        }
         product.category = null;
       } else {
         const newCategory = await this.categoriesRepository.findOne({
           where: { id: updateProductDto.categoryId },
         });
         if (!newCategory) throw new NotFoundException('Category not found');
-  
-        if (originalCategoryId !== newCategory.id) {
-          if (originalCategoryId) {
-            const oldCategory = await this.categoriesRepository.findOne({
-              where: { id: originalCategoryId },
-            });
-            if (oldCategory) {
-              oldCategory.totalProducts = Math.max(0, oldCategory.totalProducts - 1);
-              await this.categoriesRepository.save(oldCategory);
-            }
+        if (originalCategoryId && originalCategoryId !== newCategory.id) {
+          const oldCategory = await this.categoriesRepository.findOne({
+            where: { id: originalCategoryId },
+          });
+          if (oldCategory) {
+            oldCategory.totalProducts = Math.max(
+              0,
+              oldCategory.totalProducts - 1,
+            );
+            await this.categoriesRepository.save(oldCategory);
           }
           newCategory.totalProducts += 1;
           await this.categoriesRepository.save(newCategory);
         }
-  
         product.category = newCategory;
       }
     }
-  
+
     if (updateProductDto.subCategoryId !== undefined) {
       if (updateProductDto.subCategoryId === null) {
         product.subCategory = null;
@@ -215,7 +204,7 @@ export class ProductsService {
         product.subCategory = subCategory;
       }
     }
-  
+
     if (updateProductDto.subSubCategoryId !== undefined) {
       if (updateProductDto.subSubCategoryId === null) {
         product.subSubCategory = null;
@@ -223,71 +212,51 @@ export class ProductsService {
         const subSubCategory = await this.subSubCategoriesRepository.findOne({
           where: { id: updateProductDto.subSubCategoryId },
         });
-        if (!subSubCategory) throw new NotFoundException('SubSubCategory not found');
+        if (!subSubCategory)
+          throw new NotFoundException('SubSubCategory not found');
         product.subSubCategory = subSubCategory;
       }
     }
-  
+
     if (updateProductDto.compositionIds) {
       product.composition = await this.ingredientsRepository.find({
         where: { id: In(updateProductDto.compositionIds) },
       });
     }
-  
+
     if (updateProductDto.flagIds) {
-      const newFlagIds = updateProductDto.flagIds;
-  
-      const toAdd = newFlagIds.filter((id) => !originalFlagIds.includes(id));
-      const toRemove = originalFlagIds.filter((id) => !newFlagIds.includes(id));
-  
-      if (toAdd.length) {
-        await this.flagsRepository.increment({ id: In(toAdd) }, 'totalProducts', 1);
-      }
-      if (toRemove.length) {
-        await this.flagsRepository.decrement({ id: In(toRemove) }, 'totalProducts', 1);
-      }
-  
       product.flags = await this.flagsRepository.find({
-        where: { id: In(newFlagIds) },
+        where: { id: In(updateProductDto.flagIds) },
       });
     }
-  
+
     if (updateProductDto.imageUrls || updateProductDto.thumbnailUrls) {
       await this.productImagesRepository.delete({ product: { uid } });
-  
       const images: ProductImage[] = (updateProductDto.imageUrls ?? []).map(
-        (imgUrl, i) =>
-          this.productImagesRepository.create({
+        (imgUrl, i) => {
+          return this.productImagesRepository.create({
             image: imgUrl,
             thumbnail: (updateProductDto.thumbnailUrls ?? [])[i] || imgUrl,
-          }),
+          });
+        },
       );
-  
       product.images = images;
     }
 
     Object.assign(product, updateProductDto);
-  
     return this.productsRepository.save(product);
   }
+
   async remove(uid: number) {
-    const product = await this.productsRepository.findOne({
-      where: { uid },
-      relations: ['category', 'flags'],
-    });
+    const product = await this.findOne(uid);
     if (!product) throw new NotFoundException('Product not found');
-  
+
     const category = product.category;
     if (category) {
       category.totalProducts = Math.max(0, category.totalProducts - 1);
       await this.categoriesRepository.save(category);
     }
-  
-    const flagIds = (product.flags ?? []).map((f) => f.id);
-    if (flagIds.length) {
-      await this.flagsRepository.decrement({ id: In(flagIds) }, 'totalProducts', 1);
-    }
-  
+
     return this.productsRepository.remove(product);
   }
 
@@ -336,28 +305,28 @@ async findByBrand(brandId: number, page = 1, limit = 10) {
 }
 
 
-async findByCategory(categoryId: number, page = 1, limit = 10) {
-  const [category, data] = await Promise.all([
-    this.categoriesRepository.findOne({ where: { id: categoryId } }),
+  async findByCatesgory(categoryId: number, page = 1, limit = 10) {
+    const [category, data] = await Promise.all([
+      this.categoriesRepository.findOne({ where: { id: categoryId } }),
 
-    this.productsRepository
-      .createQueryBuilder('product')
-      .leftJoinAndSelect('product.images', 'images')
-      .leftJoinAndSelect('product.brand', 'brand')
-      .where('product.categoryId = :categoryId', { categoryId })
-      .orderBy('product.uid', 'DESC')
-      .skip((page - 1) * limit)
-      .take(limit)
-      .getMany(),
-  ]);
-  return {
-    data,
-    total: category?.totalProducts ?? 0,
+      this.productsRepository
+        .createQueryBuilder('product')
+        .leftJoinAndSelect('product.images', 'images')
+        .leftJoinAndSelect('product.brand', 'brand')
+        .where('product.categoryId = :categoryId', { categoryId })
+        .orderBy('product.uid', 'DESC')
+        .skip((page - 1) * limit)
+        .take(limit)
+        .getMany(),
+    ]);
+    return {
+      data,
+      total: category?.totalProducts ?? 0,
 
-    page,
-    pageCount: category ? Math.ceil(category.totalProducts / limit) : 0,
-  };
-}
+      page,
+      pageCount: category ? Math.ceil(category.totalProducts / limit) : 0,
+    };
+  }
   findBySubSubCategory(subSubCategoryId: number) {
     return this.productsRepository.find({
       where: { subSubCategory: { id: subSubCategoryId } },
@@ -370,32 +339,54 @@ async findByCategory(categoryId: number, page = 1, limit = 10) {
     });
   }
 
-  async findByFlag(flagId: number, page = 1, limit = 10) {
-    const take = Math.min(Math.max(limit, 1), 50);
-    const skip = (page - 1) * take;
-  
-    const [flag, data] = await Promise.all([
-      this.flagsRepository.findOne({ where: { id: flagId } }),
+  async findByCategory(categoryId: number, page = 1, limit = 10) {
+    const [category, data] = await Promise.all([
+      this.categoriesRepository.findOne({ where: { id: categoryId } }),
+
       this.productsRepository
         .createQueryBuilder('product')
-        .innerJoin('product.flags', 'flag', 'flag.id = :flagId', { flagId })
         .leftJoinAndSelect('product.images', 'images')
         .leftJoinAndSelect('product.brand', 'brand')
+        .where('product.categoryId = :categoryId', { categoryId })
         .orderBy('product.uid', 'DESC')
-        .skip(skip)
-        .take(take)
+        .skip((page - 1) * limit)
+        .take(limit)
         .getMany(),
     ]);
-  
-    if (!flag) throw new NotFoundException('Flag not found');
-  
     return {
       data,
-      total: flag.totalProducts,
+      total: category?.totalProducts ?? 0,
+
       page,
-      pageCount: Math.ceil(flag.totalProducts / take),
+      pageCount: category ? Math.ceil(category.totalProducts / limit) : 0,
     };
   }
+ async findByFlag(flagId: number, page = 1, limit = 10) {
+  const take = Math.min(Math.max(limit, 1), 50);
+  const skip = (page - 1) * take;
+
+  const [flag, data] = await Promise.all([
+    this.flagsRepository.findOne({ where: { id: flagId } }),
+    this.productsRepository
+      .createQueryBuilder('product')
+      .innerJoin('product.flags', 'flag', 'flag.id = :flagId', { flagId })
+      .leftJoinAndSelect('product.images', 'images')
+      .leftJoinAndSelect('product.brand', 'brand')
+      .orderBy('product.uid', 'DESC')
+      .skip(skip)
+      .take(take)
+      .getMany(),
+  ]);
+
+  if (!flag) throw new NotFoundException('Flag not found');
+
+  return {
+    data,
+    total: flag.totalProducts,   // ✅ NO COUNT
+    page,
+    pageCount: Math.ceil(flag.totalProducts / take),
+  };
+}
   async findByCategoryWithFlag(
     categoryId: number,
     flagId: number = 1,
