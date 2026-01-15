@@ -388,16 +388,18 @@ async findByBrand(brandId: number, page = 1, limit = 10) {
     const take = Math.min(Math.max(limit, 1), 50);
     const skip = (page - 1) * take;
   
-    const flag = await this.flagsRepository.findOne({ where: { id: flagId } });
-    if (!flag) throw new NotFoundException('Flag not found');
+    const flagExists = await this.flagsRepository.exist({
+      where: { id: flagId },
+    });
+    if (!flagExists) throw new NotFoundException('Flag not found');
   
     const rows = await this.productsRepository
       .createQueryBuilder('product')
       .innerJoin('product.flags', 'flag', 'flag.id = :flagId', { flagId })
       .select('product.uid', 'uid')
       .orderBy('product.uid', 'DESC')
-      .skip(skip)
-      .take(take)
+      .offset(skip)
+      .limit(take)
       .getRawMany();
   
     const uids = rows.map(r => r.uid);
@@ -415,10 +417,9 @@ async findByBrand(brandId: number, page = 1, limit = 10) {
   
     return {
       data,
-      total: flag.totalProducts,
       page,
-      pageCount: Math.ceil(flag.totalProducts / take),
-    };
+      limit: take,
+      hasMore: data.length === take, // optional
   }
   async findByCategoryWithFlag(
     categoryId: number,
