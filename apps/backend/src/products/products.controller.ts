@@ -60,6 +60,7 @@ export class ProductsController {
   getByEan(@Param('ean') ean: string) {
     return this.productsService.findByEan(ean);
   }
+  @Public()
   @Get('category/:categoryId')
   @ApiQuery({ name: 'page', required: false, type: Number })
   @ApiQuery({ name: 'limit', required: false, type: Number })
