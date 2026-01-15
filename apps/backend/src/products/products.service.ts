@@ -388,37 +388,36 @@ async findByBrand(brandId: number, page = 1, limit = 10) {
     const take = Math.min(Math.max(limit, 1), 50);
     const skip = (page - 1) * take;
   
-    const products = await this.productsRepository
+    const flag = await this.flagsRepository.findOne({ where: { id: flagId } });
+    if (!flag) throw new NotFoundException('Flag not found');
+  
+    const rows = await this.productsRepository
       .createQueryBuilder('product')
       .innerJoin('product.flags', 'flag', 'flag.id = :flagId', { flagId })
-      .leftJoin('product.images', 'images')
-      .leftJoin('product.brand', 'brand')
-      .select([
-        'product.uid',
-        'product.name',
-        'product.validScore',
-        'product.ean',
-        'brand.id',
-        'brand.name',
-        'images.id',
-        'images.thumbnail',
-      ])
+      .select('product.uid', 'uid')
       .orderBy('product.uid', 'DESC')
       .skip(skip)
       .take(take)
-      .getMany();
+      .getRawMany();
+  
+    const uids = rows.map(r => r.uid);
+  
+    const data = uids.length
+      ? await this.productsRepository.find({
+          where: { uid: In(uids) },
+          order: { uid: 'DESC' },
+          relations: {
+            images: true,
+            brand: true,
+          },
+        })
+      : [];
   
     return {
-      data: products.map(p => ({
-        uid: p.uid,
-        name: p.name,
-        validScore: p.validScore,
-        ean: p.ean,
-        brand: p.brand ? { id: p.brand.id, name: p.brand.name } : null,
-        images: (p.images ?? []).map(img => ({ id: img.id, thumbnail: img.thumbnail })),
-      })),
+      data,
+      total: flag.totalProducts,
       page,
-      limit: take,
+      pageCount: Math.ceil(flag.totalProducts / take),
     };
   }
   async findByCategoryWithFlag(
