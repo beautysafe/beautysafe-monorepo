@@ -57,11 +57,11 @@ export class Product {
   })
   images: ProductImage[];
 
-  @ManyToMany(() => Ingredient, { eager: true })
+  @ManyToMany(() => Ingredient)
   @JoinTable({ name: 'product_ingredients' })
   composition: Ingredient[];
 
-  @ManyToMany(() => Flag, { eager: true })
+  @ManyToMany(() => Flag)
   @JoinTable({ name: 'product_flags' })
   flags: Flag[];
 }
