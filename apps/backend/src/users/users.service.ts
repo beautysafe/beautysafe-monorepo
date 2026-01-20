@@ -4,6 +4,7 @@ import { Repository } from 'typeorm';
 import { User } from './user.entity';
 import { UpdateMeDto } from './dto/update-me.dto';
 import { Product } from 'src/products/entities/product.entity';
+import * as bcrypt from 'bcrypt';
 
 @Injectable()
 export class UsersService {
@@ -20,10 +21,19 @@ export class UsersService {
     return this.usersRepo.findOne({ where: { id } });
   }
 
-  // Used by your register()
-  async create(email: string, passwordHash: string, role: any) {
-    const u = this.usersRepo.create({ email, password: passwordHash, role });
-    return this.usersRepo.save(u);
+  async create(email: string, password: string, role: any) {
+    const passwordHash = await bcrypt.hash(password, 10);
+  
+    const u = this.usersRepo.create({
+      email: email.toLowerCase(),
+      password: passwordHash,
+      role,
+    });
+  
+    const saved = await this.usersRepo.save(u);
+  
+    const { password: _pw, ...safe } = saved as any;
+    return safe;
   }
 
   async getMe(userId: number) {
