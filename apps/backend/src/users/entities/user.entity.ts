@@ -45,11 +45,11 @@ export class User {
   address?: string;
 
   @ApiProperty({ type: () => [Product], required: false })
-  @ManyToMany(() => Product, { eager: false })
+  @ManyToMany(() => Product, (p) => p.favoritedBy, { eager: false })
   @JoinTable({
     name: 'user_favorites',
     joinColumn: { name: 'userId', referencedColumnName: 'id' },
-    inverseJoinColumn: { name: 'productUid', referencedColumnName: 'uid' }, // assumes Product has uid
+    inverseJoinColumn: { name: 'productUid', referencedColumnName: 'uid' },
   })
   favorites?: Product[];
 

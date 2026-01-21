@@ -14,6 +14,7 @@ import { Flag } from '../../flags/entities/flag.entity';
 import { ProductImage } from './product-image.entity';
 import { Category } from 'src/categories/entities/category.entity';
 import { SubCategory } from 'src/subcategories/entities/subcategory.entity';
+import { User } from 'src/users/entities/user.entity';
 
 export enum ProductType {
   ALL = 'All',
@@ -57,6 +58,9 @@ export class Product {
   })
   images: ProductImage[];
 
+  @ManyToMany(() => User, (u) => u.favorites)
+  favoritedBy: User[];
+  
   @ManyToMany(() => Ingredient)
   @JoinTable({ name: 'product_ingredients' })
   composition: Ingredient[];
