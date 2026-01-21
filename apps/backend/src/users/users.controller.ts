@@ -1,6 +1,9 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post, Req } from '@nestjs/common';
-import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import { Body, Controller, Delete, Get, Param, Patch, Post, Req, UploadedFile, UseInterceptors, BadRequestException } from '@nestjs/common';
+import { ApiBearerAuth, ApiConsumes, ApiBody, ApiTags } from '@nestjs/swagger';
+import { FileInterceptor } from '@nestjs/platform-express';
 import { UsersService } from './users.service';
+import { diskStorage } from 'multer';
+import { extname } from 'path';
 import { UpdateMeDto } from './dto/update-me.dto';
 
 @ApiTags('users')
@@ -43,5 +46,40 @@ export class UsersController {
   @Delete('me/favorites/:productUid')
   removeFavorite(@Req() req: any, @Param('productUid') productUid: string) {
     return this.usersService.removeFavorite(req.user.userId, Number(productUid));
+  }
+  @Post('me/avatar')
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        file: { type: 'string', format: 'binary' },
+      },
+    },
+  })
+  @UseInterceptors(
+    FileInterceptor('file', {
+      storage: diskStorage({
+        destination: './uploads/avatars',
+        filename: (req, file, cb) => {
+          const unique = `${Date.now()}-${Math.round(Math.random() * 1e9)}`;
+          cb(null, `${unique}${extname(file.originalname)}`);
+        },
+      }),
+      limits: { fileSize: 2 * 1024 * 1024 }, // 2MB
+      fileFilter: (req, file, cb) => {
+        if (!file.mimetype.startsWith('image/')) {
+          return cb(new BadRequestException('Only image files allowed'), false);
+        }
+        cb(null, true);
+      },
+    }),
+  )
+  async uploadAvatar(@Req() req: any, @UploadedFile() file: Express.Multer.File) {
+    if (!file) throw new BadRequestException('File is required');
+
+    // public URL (served by Nest static, see step 3)
+    const url = `${process.env.PUBLIC_BASE_URL || ''}/uploads/avatars/${file.filename}`;
+    return this.usersService.updateAvatar(req.user.userId, url, file.filename);
   }
 }

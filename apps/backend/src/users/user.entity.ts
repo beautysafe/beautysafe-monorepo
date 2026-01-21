@@ -44,12 +44,21 @@ export class User {
   @Column({ type: 'varchar', length: 255, nullable: true })
   address?: string;
 
-    @ApiProperty({ type: () => [Product], required: false })
-    @ManyToMany(() => Product, { eager: false })
-    @JoinTable({
-      name: 'user_favorites',
-      joinColumn: { name: 'userId', referencedColumnName: 'id' },
-      inverseJoinColumn: { name: 'productUid', referencedColumnName: 'uid' }, // assumes Product has uid
-    })
-    favorites?: Product[];  
+  @ApiProperty({ type: () => [Product], required: false })
+  @ManyToMany(() => Product, { eager: false })
+  @JoinTable({
+    name: 'user_favorites',
+    joinColumn: { name: 'userId', referencedColumnName: 'id' },
+    inverseJoinColumn: { name: 'productUid', referencedColumnName: 'uid' }, // assumes Product has uid
+  })
+  favorites?: Product[];
+
+  @ApiProperty({ required: false })
+  @Column({ type: 'varchar', length: 500, nullable: true })
+  avatarUrl?: string;
+
+  @ApiProperty({ required: false })
+  @Column({ type: 'varchar', length: 500, nullable: true })
+  avatarKey?: string; 
+    
 }

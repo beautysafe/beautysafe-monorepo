@@ -106,4 +106,15 @@ export class UsersService {
 
     return { message: 'Removed from favorites' };
   }
+  async updateAvatar(userId: number, avatarUrl: string, avatarKey?: string) {
+    const user = await this.usersRepo.findOne({ where: { id: userId } });
+    if (!user) throw new NotFoundException('User not found');
+  
+    user.avatarUrl = avatarUrl;
+    user.avatarKey = avatarKey;
+  
+    const saved = await this.usersRepo.save(user);
+    const { password, ...safe } = saved as any;
+    return safe;
+  }
 }
