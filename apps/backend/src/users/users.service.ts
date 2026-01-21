@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { User } from './user.entity';
+import { User } from './entities/user.entity';
 import { UpdateMeDto } from './dto/update-me.dto';
 import { Product } from 'src/products/entities/product.entity';
 import * as bcrypt from 'bcrypt';
@@ -66,12 +66,16 @@ export class UsersService {
   // ---------------- Favorites ----------------
 
   async listFavorites(userId: number) {
-    const user = await this.usersRepo.findOne({
-      where: { id: userId },
-      relations: { favorites: true },
-    });
+    const user = await this.usersRepo.findOne({ where: { id: userId } });
     if (!user) throw new NotFoundException('User not found');
-    return user.favorites ?? [];
+  
+    return this.productsRepo
+      .createQueryBuilder('p')
+      .innerJoin('p.favoritedBy', 'u', 'u.id = :userId', { userId })
+      .leftJoinAndSelect('p.images', 'images')
+      .leftJoinAndSelect('p.brand', 'brand')
+      .orderBy('p.uid', 'DESC')
+      .getMany();
   }
 
   async addFavorite(userId: number, productUid: number) {
