@@ -22,8 +22,12 @@ export class User {
   role: UserRole;
 
   @Column()
-  password: string; // hashed
+  password: string; 
 
+  @ApiProperty({ required: false, description: 'Full name of the user' })
+  @Column({ type: 'varchar', length: 150, nullable: true })
+  fullName?: string;
+  
   @ApiProperty({ type: String, required: false, description: 'Birthday of the user (YYYY-MM-DD)' })
   @Column({ type: 'date', nullable: true })
   birthday?: string;
