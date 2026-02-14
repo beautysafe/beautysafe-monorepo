@@ -12,7 +12,12 @@ async function bootstrap() {
     prefix: '/uploads',
   });
 
-  app.useGlobalPipes(new ValidationPipe());
+  app.useGlobalPipes(
+    new ValidationPipe({
+      transform: true,
+      whitelist: true,
+    }),
+  );
 
   app.enableCors({
     origin: (origin, callback) => {
