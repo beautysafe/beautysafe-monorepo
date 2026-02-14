@@ -21,6 +21,7 @@ import { Public } from '../common/decorators/public.decorator';
 import { Roles } from '../common/decorators/roles.decorator';
 import { Query } from '@nestjs/common';
 import { ApiQuery } from '@nestjs/swagger';
+import { SearchProductsDto } from './dto/search-products.dto';
 
 @ApiBearerAuth()
 @ApiTags('Products')
@@ -96,7 +97,7 @@ export class ProductsController {
   ) {
     return this.productsService.findByBrand(brandId, +page, +limit);
   }
-  
+
   @Public()
   @Get('flag/:flagId')
   @ApiQuery({ name: 'page', required: false, type: Number })
@@ -118,6 +119,13 @@ export class ProductsController {
     @Query('limit') limit = 10,
   ) {
     return this.productsService.findByCategoryWithFlag(id, 1, +page, +limit);
+  }
+
+  @Public()
+  @Get('search')
+  @ApiOperation({ summary: 'Advanced product search (filters + pagination)' })
+  search(@Query() query: SearchProductsDto) {
+    return this.productsService.search(query);
   }
 
   @Roles('admin')
