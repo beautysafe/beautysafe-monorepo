@@ -11,12 +11,23 @@ export class AuthService {
   ) {}
 
   async validateUser(email: string, password: string) {
-    const user = await this.usersService.findByEmail(email);
-    if (user && await bcrypt.compare(password, user.password)) {
-      const { password, ...result } = user;
+    try {
+      const user = await this.usersService.findByEmail(email.toLowerCase());
+      console.log('FOUND USER:', user);
+  
+      if (!user) return null;
+      if (!user.password) return null;
+  
+      const isMatch = await bcrypt.compare(password, user.password);
+      if (!isMatch) return null;
+  
+      const { password: _pw, ...result } = user;
       return result;
+    } catch (error) {
+      console.error('validateUser error:', error);
+      throw error;
     }
-    return null;
+    
   }
 
   async login(user: any) {

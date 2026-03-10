@@ -14,7 +14,9 @@ export class UsersService {
   ) {}
 
   async findByEmail(email: string) {
-    return this.usersRepo.findOne({ where: { email } });
+    return this.usersRepo.findOne({
+      where: { email: email.toLowerCase() },
+    });
   }
 
   async findById(id: number) {
