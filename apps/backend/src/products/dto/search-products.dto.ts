@@ -1,6 +1,13 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { Transform } from 'class-transformer';
-import { IsArray, IsBoolean, IsInt, IsNumber, IsOptional, Min } from 'class-validator';
+import {
+  IsArray,
+  IsBoolean,
+  IsInt,
+  IsNumber,
+  IsOptional,
+  Min,
+} from 'class-validator';
 
 function toIntArray(value: any): number[] | undefined {
   if (value === undefined || value === null || value === '') return undefined;

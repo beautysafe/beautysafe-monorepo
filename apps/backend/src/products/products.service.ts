@@ -458,172 +458,176 @@ export class ProductsService {
 
   // Advanced Search
   async search(dto: SearchProductsDto) {
-  const take = Math.min(Math.max(dto.limit ?? 10, 1), 50);
-  const page = Math.max(dto.page ?? 1, 1);
-  const skip = (page - 1) * take;
+    const take = Math.min(Math.max(dto.limit ?? 10, 1), 50);
+    const page = Math.max(dto.page ?? 1, 1);
+    const skip = (page - 1) * take;
 
-  const qb = this.productsRepository
-    .createQueryBuilder('product')
-    .leftJoin('product.images', 'images')
-    .leftJoin('product.brand', 'brand')
-    .leftJoin('product.category', 'category')
-    .leftJoin('product.subCategory', 'subCategory')
-    .leftJoin('product.subSubCategory', 'subSubCategory');
+    const qb = this.productsRepository
+      .createQueryBuilder('product')
+      .leftJoin('product.images', 'images')
+      .leftJoin('product.brand', 'brand')
+      .leftJoin('product.category', 'category')
+      .leftJoin('product.subCategory', 'subCategory')
+      .leftJoin('product.subSubCategory', 'subSubCategory');
 
-  qb.select([
-    'product.uid',
-    'product.name',
-    'product.validScore',
-    'product.ean',
-    'product.type',
-    'brand.id',
-    'brand.name',
-    'images.id',
-    'images.thumbnail',
-    'category.id',
-    'category.name',
-    'subCategory.id',
-    'subCategory.name',
-    'subSubCategory.id',
-    'subSubCategory.name',
-  ]);
+    qb.select([
+      'product.uid',
+      'product.name',
+      'product.validScore',
+      'product.ean',
+      'product.type',
+      'brand.id',
+      'brand.name',
+      'images.id',
+      'images.thumbnail',
+      'category.id',
+      'category.name',
+      'subCategory.id',
+      'subCategory.name',
+      'subSubCategory.id',
+      'subSubCategory.name',
+    ]);
 
-  // -----------------------------
-  // Base filters (ids)
-  // -----------------------------
-  if (dto.brandIds?.length) {
-    qb.andWhere('brand.id IN (:...brandIds)', { brandIds: dto.brandIds });
-  }
-  if (dto.categoryIds?.length) {
-    qb.andWhere('category.id IN (:...categoryIds)', {
-      categoryIds: dto.categoryIds,
-    });
-  }
-  if (dto.subCategoryIds?.length) {
-    qb.andWhere('subCategory.id IN (:...subCategoryIds)', {
-      subCategoryIds: dto.subCategoryIds,
-    });
-  }
-  if (dto.subSubCategoryIds?.length) {
-    qb.andWhere('subSubCategory.id IN (:...subSubCategoryIds)', {
-      subSubCategoryIds: dto.subSubCategoryIds,
-    });
-  }
+    // -----------------------------
+    // Base filters (ids)
+    // -----------------------------
+    if (dto.brandIds?.length) {
+      qb.andWhere('brand.id IN (:...brandIds)', { brandIds: dto.brandIds });
+    }
+    if (dto.categoryIds?.length) {
+      qb.andWhere('category.id IN (:...categoryIds)', {
+        categoryIds: dto.categoryIds,
+      });
+    }
+    if (dto.subCategoryIds?.length) {
+      qb.andWhere('subCategory.id IN (:...subCategoryIds)', {
+        subCategoryIds: dto.subCategoryIds,
+      });
+    }
+    if (dto.subSubCategoryIds?.length) {
+      qb.andWhere('subSubCategory.id IN (:...subSubCategoryIds)', {
+        subSubCategoryIds: dto.subSubCategoryIds,
+      });
+    }
 
-  // -----------------------------
-  // Score range
-  // -----------------------------
-  if (dto.minScore !== undefined) {
-    qb.andWhere('product.validScore >= :minScore', { minScore: dto.minScore });
-  }
-  if (dto.maxScore !== undefined) {
-    qb.andWhere('product.validScore <= :maxScore', { maxScore: dto.maxScore });
-  }
+    // -----------------------------
+    // Score range
+    // -----------------------------
+    if (dto.minScore !== undefined) {
+      qb.andWhere('product.validScore >= :minScore', {
+        minScore: dto.minScore,
+      });
+    }
+    if (dto.maxScore !== undefined) {
+      qb.andWhere('product.validScore <= :maxScore', {
+        maxScore: dto.maxScore,
+      });
+    }
 
-  // -----------------------------
-  // Flags include (ANY / ALL)
-  // Uses product_flags join table directly
-  // -----------------------------
-  if (dto.flagIds?.length) {
-    if (dto.requireAllFlags) {
-      qb.andWhere(
-        `product.uid IN (
+    // -----------------------------
+    // Flags include (ANY / ALL)
+    // Uses product_flags join table directly
+    // -----------------------------
+    if (dto.flagIds?.length) {
+      if (dto.requireAllFlags) {
+        qb.andWhere(
+          `product.uid IN (
           SELECT pf."productUid"
           FROM product_flags pf
           WHERE pf."flagId" IN (:...flagIds)
           GROUP BY pf."productUid"
           HAVING COUNT(DISTINCT pf."flagId") = :flagCount
         )`,
-        { flagIds: dto.flagIds, flagCount: dto.flagIds.length },
-      );
-    } else {
-      qb.andWhere(
-        `EXISTS (
+          { flagIds: dto.flagIds, flagCount: dto.flagIds.length },
+        );
+      } else {
+        qb.andWhere(
+          `EXISTS (
           SELECT 1
           FROM product_flags pf
           WHERE pf."productUid" = product.uid
             AND pf."flagId" IN (:...flagIds)
         )`,
-        { flagIds: dto.flagIds },
-      );
+          { flagIds: dto.flagIds },
+        );
+      }
     }
-  }
 
-  // -----------------------------
-  // Ingredients include (ANY / ALL)
-  // Uses product_ingredients join table directly
-  // -----------------------------
-  if (dto.includeIngredientIds?.length) {
-    if (dto.requireAllIngredients) {
-      qb.andWhere(
-        `product.uid IN (
+    // -----------------------------
+    // Ingredients include (ANY / ALL)
+    // Uses product_ingredients join table directly
+    // -----------------------------
+    if (dto.includeIngredientIds?.length) {
+      if (dto.requireAllIngredients) {
+        qb.andWhere(
+          `product.uid IN (
           SELECT pi."productUid"
           FROM product_ingredients pi
           WHERE pi."ingredientId" IN (:...includeIngredientIds)
           GROUP BY pi."productUid"
           HAVING COUNT(DISTINCT pi."ingredientId") = :ingCount
         )`,
-        {
-          includeIngredientIds: dto.includeIngredientIds,
-          ingCount: dto.includeIngredientIds.length,
-        },
-      );
-    } else {
-      qb.andWhere(
-        `EXISTS (
+          {
+            includeIngredientIds: dto.includeIngredientIds,
+            ingCount: dto.includeIngredientIds.length,
+          },
+        );
+      } else {
+        qb.andWhere(
+          `EXISTS (
           SELECT 1
           FROM product_ingredients pi
           WHERE pi."productUid" = product.uid
             AND pi."ingredientId" IN (:...includeIngredientIds)
         )`,
-        { includeIngredientIds: dto.includeIngredientIds },
-      );
+          { includeIngredientIds: dto.includeIngredientIds },
+        );
+      }
     }
-  }
 
-  // -----------------------------
-  // Ingredients exclude (ANY match excluded)
-  // -----------------------------
-  if (dto.excludeIngredientIds?.length) {
-    qb.andWhere(
-      `NOT EXISTS (
+    // -----------------------------
+    // Ingredients exclude (ANY match excluded)
+    // -----------------------------
+    if (dto.excludeIngredientIds?.length) {
+      qb.andWhere(
+        `NOT EXISTS (
         SELECT 1
         FROM product_ingredients pi
         WHERE pi."productUid" = product.uid
           AND pi."ingredientId" IN (:...excludeIngredientIds)
       )`,
-      { excludeIngredientIds: dto.excludeIngredientIds },
-    );
+        { excludeIngredientIds: dto.excludeIngredientIds },
+      );
+    }
+
+    // -----------------------------
+    // Ordering + pagination
+    // -----------------------------
+    qb.orderBy('product.validScore', 'DESC')
+      .addOrderBy('product.uid', 'DESC')
+      .skip(skip)
+      .take(take);
+
+    // Count total (distinct products) using a clone
+    const countQb = qb
+      .clone()
+      .skip(undefined)
+      .take(undefined)
+      .orderBy()
+      .select('COUNT(DISTINCT product.uid)', 'cnt');
+
+    const [{ cnt }] = await countQb.getRawMany();
+    const total = parseInt(cnt, 10) || 0;
+
+    const data = await qb.getMany();
+
+    return {
+      data,
+      page,
+      limit: take,
+      total,
+      pageCount: Math.ceil(total / take),
+      hasMore: page * take < total,
+    };
   }
-
-  // -----------------------------
-  // Ordering + pagination
-  // -----------------------------
-  qb.orderBy('product.validScore', 'DESC')
-    .addOrderBy('product.uid', 'DESC')
-    .skip(skip)
-    .take(take);
-
-  // Count total (distinct products) using a clone
-  const countQb = qb
-    .clone()
-    .skip(undefined)
-    .take(undefined)
-    .orderBy()
-    .select('COUNT(DISTINCT product.uid)', 'cnt');
-
-  const [{ cnt }] = await countQb.getRawMany();
-  const total = parseInt(cnt, 10) || 0;
-
-  const data = await qb.getMany();
-
-  return {
-    data,
-    page,
-    limit: take,
-    total,
-    pageCount: Math.ceil(total / take),
-    hasMore: page * take < total,
-  };
-}
 }

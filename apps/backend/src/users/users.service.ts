@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  ForbiddenException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { User } from './entities/user.entity';
@@ -25,15 +29,15 @@ export class UsersService {
 
   async create(email: string, password: string, role: any) {
     const passwordHash = await bcrypt.hash(password, 10);
-  
+
     const u = this.usersRepo.create({
       email: email.toLowerCase(),
       password: passwordHash,
       role,
     });
-  
+
     const saved = await this.usersRepo.save(u);
-  
+
     const { password: _pw, ...safe } = saved as any;
     return safe;
   }
@@ -70,7 +74,7 @@ export class UsersService {
   async listFavorites(userId: number) {
     const user = await this.usersRepo.findOne({ where: { id: userId } });
     if (!user) throw new NotFoundException('User not found');
-  
+
     return this.productsRepo
       .createQueryBuilder('p')
       .innerJoin('p.favoritedBy', 'u', 'u.id = :userId', { userId })
@@ -87,11 +91,13 @@ export class UsersService {
     });
     if (!user) throw new NotFoundException('User not found');
 
-    const product = await this.productsRepo.findOne({ where: { uid: productUid } as any });
+    const product = await this.productsRepo.findOne({
+      where: { uid: productUid } as any,
+    });
     if (!product) throw new NotFoundException('Product not found');
 
     const favorites = user.favorites ?? [];
-    const exists = favorites.some(p => (p as any).uid === productUid);
+    const exists = favorites.some((p) => (p as any).uid === productUid);
     if (!exists) favorites.push(product);
 
     user.favorites = favorites;
@@ -107,7 +113,9 @@ export class UsersService {
     });
     if (!user) throw new NotFoundException('User not found');
 
-    user.favorites = (user.favorites ?? []).filter(p => (p as any).uid !== productUid);
+    user.favorites = (user.favorites ?? []).filter(
+      (p) => (p as any).uid !== productUid,
+    );
     await this.usersRepo.save(user);
 
     return { message: 'Removed from favorites' };
@@ -115,10 +123,10 @@ export class UsersService {
   async updateAvatar(userId: number, avatarUrl: string, avatarKey?: string) {
     const user = await this.usersRepo.findOne({ where: { id: userId } });
     if (!user) throw new NotFoundException('User not found');
-  
+
     user.avatarUrl = avatarUrl;
     user.avatarKey = avatarKey;
-  
+
     const saved = await this.usersRepo.save(user);
     const { password, ...safe } = saved as any;
     return safe;

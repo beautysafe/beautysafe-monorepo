@@ -10,7 +10,7 @@ import { Family } from '../../families/entities/family.entity';
 
 @Entity()
 export class Ingredient {
-@PrimaryColumn({ type: 'int' })
+  @PrimaryColumn({ type: 'int' })
   id: number;
 
   @Column()

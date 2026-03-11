@@ -60,7 +60,7 @@ export class Product {
 
   @ManyToMany(() => User, (u) => u.favorites)
   favoritedBy: User[];
-  
+
   @ManyToMany(() => Ingredient)
   @JoinTable({ name: 'product_ingredients' })
   composition: Ingredient[];

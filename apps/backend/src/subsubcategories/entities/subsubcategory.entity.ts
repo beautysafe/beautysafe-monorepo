@@ -9,6 +9,9 @@ export class SubSubCategory {
   @Column()
   name: string;
 
-  @ManyToOne(() => SubCategory, (subcategory) => subcategory.subsubcategories, { eager: true, onDelete: 'CASCADE' })
+  @ManyToOne(() => SubCategory, (subcategory) => subcategory.subsubcategories, {
+    eager: true,
+    onDelete: 'CASCADE',
+  })
   subcategory: SubCategory;
 }

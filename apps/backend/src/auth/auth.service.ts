@@ -13,20 +13,19 @@ export class AuthService {
   async validateUser(email: string, password: string) {
     try {
       if (!email || !password) return null;
-  
+
       const user = await this.usersService.findByEmail(email.toLowerCase());
       if (!user || !user.password) return null;
-  
+
       const isMatch = await bcrypt.compare(password, user.password);
       if (!isMatch) return null;
-  
+
       const { password: _pw, ...result } = user;
       return result;
     } catch (error) {
       console.error('validateUser error:', error);
       throw error;
     }
-    
   }
 
   async login(user: any) {

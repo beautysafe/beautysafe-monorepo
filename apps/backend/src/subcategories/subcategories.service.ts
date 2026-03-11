@@ -16,7 +16,9 @@ export class SubcategoriesService {
   ) {}
 
   async create(createSubCategoryDto: CreateSubCategoryDto) {
-    const category = await this.categoryRepository.findOne({ where: { id: createSubCategoryDto.categoryId } });
+    const category = await this.categoryRepository.findOne({
+      where: { id: createSubCategoryDto.categoryId },
+    });
     if (!category) throw new NotFoundException('Category not found');
     const subcategory = this.subcategoryRepository.create({
       name: createSubCategoryDto.name,
@@ -26,18 +28,27 @@ export class SubcategoriesService {
   }
 
   findAll() {
-    return this.subcategoryRepository.find({ relations: ['category', 'subsubcategories'] });
+    return this.subcategoryRepository.find({
+      relations: ['category', 'subsubcategories'],
+    });
   }
 
   findOne(id: number) {
-    return this.subcategoryRepository.findOne({ where: { id }, relations: ['category', 'subsubcategories'] });
+    return this.subcategoryRepository.findOne({
+      where: { id },
+      relations: ['category', 'subsubcategories'],
+    });
   }
 
   async update(id: number, updateSubCategoryDto: UpdateSubCategoryDto) {
-    const subcategory = await this.subcategoryRepository.findOne({ where: { id } });
+    const subcategory = await this.subcategoryRepository.findOne({
+      where: { id },
+    });
     if (!subcategory) throw new NotFoundException('SubCategory not found');
     if (updateSubCategoryDto.categoryId) {
-      const category = await this.categoryRepository.findOne({ where: { id: updateSubCategoryDto.categoryId } });
+      const category = await this.categoryRepository.findOne({
+        where: { id: updateSubCategoryDto.categoryId },
+      });
       if (!category) throw new NotFoundException('Category not found');
       subcategory.category = category;
     }

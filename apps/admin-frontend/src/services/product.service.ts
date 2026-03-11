@@ -1,5 +1,5 @@
 import { api } from '../lib/api/api-client';
-import type { Product } from '../lib/entities';
+import type { Product, ProductsByFlagResponse } from '../lib/entities';
 
 // Create product
 export const createProduct = (data: Partial<Product>) =>
@@ -46,8 +46,14 @@ export const getProductsBySubSubCategory = (subSubCategoryId: number | string) =
   api.get<Product[]>(`/products/subsubcategory/${subSubCategoryId}`);
 
 // Get products by Flag
-export const getProductsByFlag = (flagId: number | string) =>
-  api.get<Product[]>(`/products/flag/${flagId}`);
+export const getProductsByFlag = (
+  flagId: number | string,
+  page = 1,
+  limit = 10
+) =>
+  api.get<ProductsByFlagResponse>(
+    `/products/flag/${flagId}?limit=${limit}&page=${page}`
+  );
 
 // Get products by Brand 
 export const getProductsByBrand = (

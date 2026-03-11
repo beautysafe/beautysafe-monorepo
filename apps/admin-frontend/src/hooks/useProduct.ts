@@ -67,10 +67,14 @@ export function useProductsBySubSubCategory(subSubCategoryId: number | string) {
   });
 }
 
-export function useProductsByFlag(flagId: number | string) {
+export function useProductsByFlag(
+  flagId?: number | string,
+  page = 1,
+  limit = 10
+) {
   return useQuery({
-    queryKey: ['productsByFlag', flagId],
-    queryFn: () => getProductsByFlag(flagId),
+    queryKey: ['productsByFlag', flagId, page, limit],
+    queryFn: () => getProductsByFlag(flagId!, page, limit),
     enabled: !!flagId,
   });
 }

@@ -9,11 +9,8 @@ import {
   Modal,
   Spin,
 } from "antd";
-import {
-  useProductByEan,
-  useProductsByFlag,
-  useProductsByCategory,
-} from "../../../hooks/useProduct";
+import { useProductByEan, useProductsByFlag } from "../../../hooks/useProduct";
+import { useFlagById } from "../../../hooks/useFlag";
 import type { Product } from "../../../lib/entities";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import CreateProductForm from "./create-product-form";
@@ -21,11 +18,14 @@ import CreateProductForm from "./create-product-form";
 const ProductsList: React.FC = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const categoryId = searchParams.get("CategoryId");
+
+  const flagIdParam = searchParams.get("flagId");
+  const flagId = flagIdParam ? Number(flagIdParam) : undefined;
+
+  const { data: flagInfo, isLoading: isLoadingFlagInfo } = useFlagById(flagId!);
 
   const [createVisible, setCreateVisible] = React.useState(false);
   const [search, setSearch] = React.useState("");
-  const [selectedFlag, setSelectedFlag] = React.useState<number | undefined>();
   const [page, setPage] = React.useState(1);
   const [limit] = React.useState(10);
 
@@ -34,18 +34,21 @@ const ProductsList: React.FC = () => {
     isLoading: isSearching,
     error: searchError,
   } = useProductByEan(search);
-  const { data: productsByFlag } = useProductsByFlag(selectedFlag!);
-  const { data: productsByCategory } = useProductsByCategory(
-    categoryId!,
-    page,
-    limit
-  );
+
+  const {
+    data: productsByFlag,
+    isLoading: isLoadingByFlag,
+  } = useProductsByFlag(flagId, page, limit);
 
   React.useEffect(() => {
     if (searchError) {
       message.error("Aucun produit trouvé avec cet EAN");
     }
   }, [searchError]);
+
+  React.useEffect(() => {
+    setPage(1);
+  }, [flagId]);
 
   const columns = [
     { title: "ID", dataIndex: "uid" },
@@ -85,12 +88,9 @@ const ProductsList: React.FC = () => {
   if (search && foundProduct) {
     tableData = [foundProduct];
     total = 1;
-  } else if (selectedFlag && productsByFlag) {
-    tableData = productsByFlag;
-    total = productsByFlag.length;
-  } else if (categoryId && productsByCategory) {
-    tableData = productsByCategory.data;
-    total = productsByCategory.total;
+  } else if (flagId) {
+    tableData = productsByFlag?.data ?? [];
+    total = flagInfo?.totalProducts ?? 0;
   }
 
   return (
@@ -117,10 +117,10 @@ const ProductsList: React.FC = () => {
             loading={isSearching}
             onSearch={(val) => {
               setSearch(val.trim());
-              setSelectedFlag(undefined);
             }}
           />
         </Col>
+
         <Col>
           <Button
             onClick={() => {
@@ -130,6 +130,7 @@ const ProductsList: React.FC = () => {
             Réinitialiser
           </Button>
         </Col>
+
         <Col>
           <Button
             type="primary"
@@ -141,7 +142,11 @@ const ProductsList: React.FC = () => {
         </Col>
       </Row>
 
-      <Spin spinning={isSearching}>
+      <Spin
+        spinning={
+          isSearching || (!!flagId && (isLoadingByFlag || isLoadingFlagInfo))
+        }
+      >
         <Table<Product>
           dataSource={tableData}
           rowKey="uid"

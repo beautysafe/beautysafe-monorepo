@@ -40,6 +40,7 @@ export interface Ingredient {
 export interface Flag {
   id: number;
   name: string;
+  totalProducts: number;
 }
 
 export type ProductType = "Men" | "Women" | "Child" | "Baby";
@@ -64,3 +65,9 @@ export interface Product {
   composition: Ingredient[];
   flags: Flag[];
 }
+export type ProductsByFlagResponse = {
+  data: Product[];
+  hasMore: boolean;
+  page: number;
+  limit: number;
+};

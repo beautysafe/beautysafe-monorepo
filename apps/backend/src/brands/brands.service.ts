@@ -29,8 +29,8 @@ export class BrandsService {
       skip,
       take: limit,
       order: {
-      totalProducts: 'DESC',
-    },
+        totalProducts: 'DESC',
+      },
     });
   }
 

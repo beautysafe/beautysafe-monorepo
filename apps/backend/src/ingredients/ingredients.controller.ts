@@ -12,7 +12,12 @@ import {
 import { IngredientsService } from './ingredients.service';
 import { CreateIngredientDto } from './dto/create-ingredient.dto';
 import { UpdateIngredientDto } from './dto/update-ingredient.dto';
-import { ApiBearerAuth, ApiTags, ApiOperation, ApiQuery } from '@nestjs/swagger';
+import {
+  ApiBearerAuth,
+  ApiTags,
+  ApiOperation,
+  ApiQuery,
+} from '@nestjs/swagger';
 
 @ApiBearerAuth()
 @ApiTags('ingredients')
@@ -30,8 +35,8 @@ export class IngredientsController {
     return this.ingredientsService.searchByName(query);
   }
   @Get()
-    @ApiQuery({ name: 'page', required: false, type: Number })
-    @ApiQuery({ name: 'limit', required: false, type: Number })
+  @ApiQuery({ name: 'page', required: false, type: Number })
+  @ApiQuery({ name: 'limit', required: false, type: Number })
   findAll(@Query('page') page = 1, @Query('limit') limit = 10) {
     return this.ingredientsService.findAll(+page, +limit);
   }

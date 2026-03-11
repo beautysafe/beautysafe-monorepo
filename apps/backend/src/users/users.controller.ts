@@ -1,4 +1,16 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post, Req, UploadedFile, UseInterceptors, BadRequestException } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  Patch,
+  Post,
+  Req,
+  UploadedFile,
+  UseInterceptors,
+  BadRequestException,
+} from '@nestjs/common';
 import { ApiBearerAuth, ApiConsumes, ApiBody, ApiTags } from '@nestjs/swagger';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { UsersService } from './users.service';
@@ -45,7 +57,10 @@ export class UsersController {
   // DELETE /users/me/favorites/:productUid
   @Delete('me/favorites/:productUid')
   removeFavorite(@Req() req: any, @Param('productUid') productUid: string) {
-    return this.usersService.removeFavorite(req.user.userId, Number(productUid));
+    return this.usersService.removeFavorite(
+      req.user.userId,
+      Number(productUid),
+    );
   }
   @Post('me/avatar')
   @ApiConsumes('multipart/form-data')
@@ -75,7 +90,10 @@ export class UsersController {
       },
     }),
   )
-  async uploadAvatar(@Req() req: any, @UploadedFile() file: Express.Multer.File) {
+  async uploadAvatar(
+    @Req() req: any,
+    @UploadedFile() file: Express.Multer.File,
+  ) {
     if (!file) throw new BadRequestException('File is required');
 
     // public URL (served by Nest static, see step 3)

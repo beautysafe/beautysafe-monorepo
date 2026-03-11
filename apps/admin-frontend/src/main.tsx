@@ -19,48 +19,62 @@ import "./App.css";
 import IngredientsList from "./pages/dashboard/ingreddients/list-ingreddients";
 import BrandsList from "./pages/dashboard/brands/list-brands";
 import ProductsByBrand from "./pages/dashboard/brands/list-product-by-brand";
-
+import { jwtDecode } from "jwt-decode";
+import SearchProductByEanPage from "./pages/dashboard/products/search-product";
 const queryClient = new QueryClient();
+
+const isTokenValid = (token: string | null): boolean => {
+  if (!token) return false;
+  try {
+    const decoded: { exp?: number } = jwtDecode(token);
+    if (!decoded.exp) return false;
+    return decoded.exp * 1000 > Date.now();
+  } catch {
+    return false;
+  }
+};
+
+const RootRedirect = () => {
+  const token = localStorage.getItem("token");
+  const valid = isTokenValid(token);
+
+  if (!valid && token) localStorage.removeItem("token");
+
+  return <Navigate to={valid ? "/dashboard" : "/login"} replace />;
+};
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
         <Routes>
-          <Route path="*" element={<NotFound />} />
+          <Route path="/" element={<RootRedirect />} />
           <Route path="/login" element={<Login />} />
 
           <Route element={<ProtectedRoute />}>
             <Route path="/dashboard/*" element={<DashboardLayout />}>
+              <Route index element={<Navigate to="products/search" replace />} />
               <Route path="coming-soon" element={<ComingSoon />} />
               <Route path="products" element={<ProductsList />} />
               <Route path="products/:id" element={<ProductDetail />} />
               <Route path="products/create" element={<CreateProductPage />} />
+              <Route path="products/search" element={<SearchProductByEanPage />} />
               <Route path="categories" element={<CategoriesPage />} />
               <Route
                 path="categories/:categoryId"
                 element={<SubCategoriesPage />}
-              />              
+              />
               <Route
                 path="subcategories/:subCategoryId"
                 element={<SubSubCategoriesPage />}
               />
-              <Route
-                path="ingredients"
-                element={<IngredientsList />}
-              />
-              <Route
-                path="brands"
-                element={<BrandsList />}
-              />
-              <Route
-                path="brands/:brandId"
-                element={<ProductsByBrand />}
-              />    
-          
+              <Route path="ingredients" element={<IngredientsList />} />
+              <Route path="brands" element={<BrandsList />} />
+              <Route path="brands/:brandId" element={<ProductsByBrand />} />
             </Route>
           </Route>
-          <Route path="/login" element={<Navigate to="/login" />} />
+
+          <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
     </QueryClientProvider>

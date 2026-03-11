@@ -41,7 +41,7 @@ export class CreateProductDto {
   @IsOptional()
   @IsNumber()
   subCategoryId?: number;
-  
+
   @ApiProperty()
   @IsOptional()
   @IsNumber()

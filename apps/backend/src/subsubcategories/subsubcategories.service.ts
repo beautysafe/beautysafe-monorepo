@@ -16,7 +16,9 @@ export class SubsubcategoriesService {
   ) {}
 
   async create(createDto: CreateSubSubCategoryDto) {
-    const subcategory = await this.subcategoryRepository.findOne({ where: { id: createDto.subcategoryId } });
+    const subcategory = await this.subcategoryRepository.findOne({
+      where: { id: createDto.subcategoryId },
+    });
     if (!subcategory) throw new NotFoundException('SubCategory not found');
     const subsubcategory = this.subsubcategoryRepository.create({
       name: createDto.name,
@@ -30,14 +32,22 @@ export class SubsubcategoriesService {
   }
 
   findOne(id: number) {
-    return this.subsubcategoryRepository.findOne({ where: { id }, relations: ['subcategory'] });
+    return this.subsubcategoryRepository.findOne({
+      where: { id },
+      relations: ['subcategory'],
+    });
   }
 
   async update(id: number, updateDto: UpdateSubSubCategoryDto) {
-    const subsubcategory = await this.subsubcategoryRepository.findOne({ where: { id } });
-    if (!subsubcategory) throw new NotFoundException('SubSubCategory not found');
+    const subsubcategory = await this.subsubcategoryRepository.findOne({
+      where: { id },
+    });
+    if (!subsubcategory)
+      throw new NotFoundException('SubSubCategory not found');
     if (updateDto.subcategoryId) {
-      const subcategory = await this.subcategoryRepository.findOne({ where: { id: updateDto.subcategoryId } });
+      const subcategory = await this.subcategoryRepository.findOne({
+        where: { id: updateDto.subcategoryId },
+      });
       if (!subcategory) throw new NotFoundException('SubCategory not found');
       subsubcategory.subcategory = subcategory;
     }
@@ -47,7 +57,8 @@ export class SubsubcategoriesService {
 
   async remove(id: number) {
     const subsubcategory = await this.findOne(id);
-    if (!subsubcategory) throw new NotFoundException('SubSubCategory not found');
+    if (!subsubcategory)
+      throw new NotFoundException('SubSubCategory not found');
     return this.subsubcategoryRepository.remove(subsubcategory);
   }
 }

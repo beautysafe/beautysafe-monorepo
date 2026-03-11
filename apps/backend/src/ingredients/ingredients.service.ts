@@ -11,7 +11,7 @@ export class IngredientsService {
     @InjectRepository(Ingredient)
     private ingredientRepository: Repository<Ingredient>,
   ) {}
- async searchByName(query: string) {
+  async searchByName(query: string) {
     return this.ingredientRepository.find({
       where: { name: ILike(`${query}%`) },
       take: 10,
@@ -22,7 +22,7 @@ export class IngredientsService {
     return this.ingredientRepository.save(ingredient);
   }
 
-  async findAll(page=1, limit=100) {
+  async findAll(page = 1, limit = 100) {
     const skip = (page - 1) * limit;
     return this.ingredientRepository.find({
       skip,
@@ -31,13 +31,17 @@ export class IngredientsService {
   }
 
   async findOne(id: number) {
-    const ingredient = await this.ingredientRepository.findOne({ where: { id } });
+    const ingredient = await this.ingredientRepository.findOne({
+      where: { id },
+    });
     if (!ingredient) throw new NotFoundException('Ingredient not found');
     return ingredient;
   }
 
   async update(id: number, updateIngredientDto: UpdateIngredientDto) {
-    const ingredient = await this.ingredientRepository.findOne({ where: { id } });
+    const ingredient = await this.ingredientRepository.findOne({
+      where: { id },
+    });
     if (!ingredient) throw new NotFoundException('Ingredient not found');
     Object.assign(ingredient, updateIngredientDto);
     return this.ingredientRepository.save(ingredient);

@@ -10,42 +10,18 @@ import {
   UserOutlined,
   MenuFoldOutlined,
   MenuUnfoldOutlined,
+  ShoppingOutlined,
+  PlusOutlined,
+  SearchOutlined,
 } from "@ant-design/icons";
-import { Link, Outlet, useNavigate } from "react-router-dom";
-import logo from '../../assets/logo.png';
+import { Link, Outlet, useLocation, useNavigate } from "react-router-dom";
+import logo from "../../assets/logo.png";
 
 const { Header, Sider, Content } = Layout;
 
-const menuItems = [
-  {
-    key: "categories",
-    icon: <AppstoreOutlined />,
-    label: <Link to="/dashboard/categories">Catégories</Link>,
-  },
-  {
-    key: "ingredients",
-    icon: <ExperimentOutlined />,
-    label: <Link to="/dashboard/ingredients">Ingrédients</Link>,
-  },
-  {
-    key: "quiz",
-    icon: <QuestionCircleOutlined />,
-    label: <Link to="/dashboard/coming-soon">Quiz</Link>,
-  },
-  {
-    key: "brands",
-    icon: <TagsOutlined />,
-    label: <Link to="/dashboard/brands">Marques</Link>,
-  },
-  {
-    key: "announcements",
-    icon: <NotificationOutlined />,
-    label: <Link to="/dashboard/coming-soon">Annonces</Link>,
-  },
-];
-
 const DashboardLayout: React.FC = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [collapsed, setCollapsed] = React.useState(false);
 
   const logout = () => {
@@ -53,7 +29,6 @@ const DashboardLayout: React.FC = () => {
     navigate("/login");
   };
 
-  // Dropdown menu for user
   const userMenu = (
     <Menu>
       <Menu.Item key="profile" icon={<UserOutlined />}>
@@ -65,15 +40,76 @@ const DashboardLayout: React.FC = () => {
     </Menu>
   );
 
+  const menuItems = [
+    {
+      key: "products",
+      icon: <ShoppingOutlined />,
+      label: "Produits",
+      children: [
+        {
+          key: "products-search",
+          icon: <SearchOutlined />,
+          label: <Link to="/dashboard/products/search">Rechercher</Link>,
+        },
+        {
+          key: "products-create",
+          icon: <PlusOutlined />,
+          label: <Link to="/dashboard/products/create">Créer un produit</Link>,
+        },
+      ],
+    },
+    {
+      key: "categories",
+      icon: <AppstoreOutlined />,
+      label: <Link to="/dashboard/categories">Catégories</Link>,
+    },
+    {
+      key: "ingredients",
+      icon: <ExperimentOutlined />,
+      label: <Link to="/dashboard/ingredients">Ingrédients</Link>,
+    },
+    {
+      key: "brands",
+      icon: <TagsOutlined />,
+      label: <Link to="/dashboard/brands">Marques</Link>,
+    },
+    {
+      key: "announcements",
+      icon: <NotificationOutlined />,
+      label: <Link to="/dashboard/coming-soon">Annonces</Link>,
+    },
+    {
+      key: "quiz",
+      icon: <QuestionCircleOutlined />,
+      label: <Link to="/dashboard/coming-soon">Quiz</Link>,
+    },
+  ];
+
+  const getSelectedKeys = () => {
+    if (location.pathname === "/dashboard/products/search") return ["products-search"];
+    if (location.pathname === "/dashboard/products/create") return ["products-create"];
+    if (location.pathname.startsWith("/dashboard/products/")) return ["products-list"];
+    if (location.pathname.startsWith("/dashboard/categories")) return ["categories"];
+    if (location.pathname.startsWith("/dashboard/ingredients")) return ["ingredients"];
+    if (location.pathname.startsWith("/dashboard/brands")) return ["brands"];
+    if (location.pathname.startsWith("/dashboard/coming-soon")) return ["announcements"];
+    return ["products-list"];
+  };
+
+  const getOpenKeys = () => {
+    if (location.pathname.startsWith("/dashboard/products")) return ["products"];
+    return [];
+  };
+
   return (
     <Layout style={{ minHeight: "100vh" }}>
       <Sider
         collapsible
         collapsed={collapsed}
         onCollapse={setCollapsed}
-        width={220}
+        width={250}
         style={{
-          background: "linear-gradient(135deg, #b80054 0%, #4d0022 100%)",
+          background: "linear-gradient(135deg, #2FA5E4 0%, #ffccc7 100%)",
           boxShadow: "2px 0 8px #f0f1f2",
         }}
       >
@@ -105,10 +141,12 @@ const DashboardLayout: React.FC = () => {
             </span>
           )}
         </div>
+
         <Menu
-          theme="dark"
+          theme="light"
           mode="inline"
-          defaultSelectedKeys={["categories"]}
+          selectedKeys={getSelectedKeys()}
+          defaultOpenKeys={getOpenKeys()}
           style={{
             background: "transparent",
             borderRadius: 12,
@@ -126,6 +164,7 @@ const DashboardLayout: React.FC = () => {
           ]}
         />
       </Sider>
+
       <Layout>
         <Header
           style={{
@@ -150,6 +189,7 @@ const DashboardLayout: React.FC = () => {
               Dashboard
             </h2>
           </div>
+
           <Dropdown overlay={userMenu} placement="bottomRight">
             <div style={{ display: "flex", alignItems: "center", cursor: "pointer" }}>
               <Avatar size={36} style={{ background: "#7c92ec" }} icon={<UserOutlined />} />
@@ -159,6 +199,7 @@ const DashboardLayout: React.FC = () => {
             </div>
           </Dropdown>
         </Header>
+
         <Content
           style={{
             margin: "24px 16px",
@@ -175,7 +216,7 @@ const DashboardLayout: React.FC = () => {
               maxWidth: 1200,
               margin: "auto",
               borderRadius: 16,
-              boxShadow: "0 4px 24px rgba(44,77,147,0.10)",
+              boxShadow: "0 4px 24px rgba(126, 157, 224, 0.1)",
               background: "#fff",
             }}
             bodyStyle={{ padding: 32 }}

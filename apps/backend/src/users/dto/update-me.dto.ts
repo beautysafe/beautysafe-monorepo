@@ -1,5 +1,11 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { IsOptional, IsString, IsDateString, MaxLength, IsUrl } from 'class-validator';
+import {
+  IsOptional,
+  IsString,
+  IsDateString,
+  MaxLength,
+  IsUrl,
+} from 'class-validator';
 
 export class UpdateMeDto {
   @ApiPropertyOptional({ example: 'Ilyas Chenouf' })
@@ -7,7 +13,7 @@ export class UpdateMeDto {
   @IsString()
   @MaxLength(150)
   fullName?: string;
-  
+
   @ApiPropertyOptional({ example: '1995-06-30' })
   @IsOptional()
   @IsDateString()
@@ -37,7 +43,10 @@ export class UpdateMeDto {
   @MaxLength(255)
   address?: string;
 
-  @ApiPropertyOptional({ example: 'https://firebasestorage.googleapis.com/v0/b/<project>.appspot.com/o/avatars%2Fuser-1.jpg?alt=media&token=...' })
+  @ApiPropertyOptional({
+    example:
+      'https://firebasestorage.googleapis.com/v0/b/<project>.appspot.com/o/avatars%2Fuser-1.jpg?alt=media&token=...',
+  })
   @IsOptional()
   @IsUrl()
   @MaxLength(500)

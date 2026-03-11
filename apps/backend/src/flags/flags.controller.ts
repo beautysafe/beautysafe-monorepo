@@ -1,4 +1,13 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, ParseIntPipe } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+  ParseIntPipe,
+} from '@nestjs/common';
 import { FlagsService } from './flags.service';
 import { CreateFlagDto } from './dto/create-flag.dto';
 import { UpdateFlagDto } from './dto/update-flag.dto';
@@ -26,7 +35,10 @@ export class FlagsController {
   }
 
   @Patch(':id')
-  update(@Param('id', ParseIntPipe) id: number, @Body() updateFlagDto: UpdateFlagDto) {
+  update(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() updateFlagDto: UpdateFlagDto,
+  ) {
     return this.flagsService.update(id, updateFlagDto);
   }
 

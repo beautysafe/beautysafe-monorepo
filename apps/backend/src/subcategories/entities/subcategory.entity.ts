@@ -1,4 +1,10 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, OneToMany } from 'typeorm';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  ManyToOne,
+  OneToMany,
+} from 'typeorm';
 import { Category } from '../../categories/entities/category.entity';
 import { SubSubCategory } from '../../subsubcategories/entities/subsubcategory.entity';
 
@@ -10,9 +16,15 @@ export class SubCategory {
   @Column()
   name: string;
 
-  @ManyToOne(() => Category, (category) => category.subcategories, { eager: true, onDelete: 'CASCADE' })
+  @ManyToOne(() => Category, (category) => category.subcategories, {
+    eager: true,
+    onDelete: 'CASCADE',
+  })
   category: Category;
 
-  @OneToMany(() => SubSubCategory, (subsubcategory) => subsubcategory.subcategory)
+  @OneToMany(
+    () => SubSubCategory,
+    (subsubcategory) => subsubcategory.subcategory,
+  )
   subsubcategories: SubSubCategory[];
 }

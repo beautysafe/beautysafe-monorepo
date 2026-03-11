@@ -13,6 +13,8 @@ import { BrandsModule } from './brands/brands.module';
 import { FlagsModule } from './flags/flags.module';
 import { IngredientsModule } from './ingredients/ingredients.module';
 import { FamiliesModule } from './families/families.module';
+import { BannersModule } from './banners/banners.module';
+import { StoriesModule } from './stories/stories.module';
 
 import { APP_GUARD } from '@nestjs/core';
 import { RolesGuard } from './common/guards/roles.guard';
@@ -41,6 +43,8 @@ import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
     FlagsModule,
     IngredientsModule,
     FamiliesModule,
+    BannersModule,
+    StoriesModule,
   ],
   providers: [
     AppService,

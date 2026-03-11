@@ -1,4 +1,10 @@
-import { Entity, PrimaryGeneratedColumn, Column, JoinTable, ManyToMany } from 'typeorm';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  JoinTable,
+  ManyToMany,
+} from 'typeorm';
 import { ApiProperty } from '@nestjs/swagger';
 import { Product } from 'src/products/entities/product.entity';
 
@@ -22,13 +28,17 @@ export class User {
   role: UserRole;
 
   @Column()
-  password: string; 
+  password: string;
 
   @ApiProperty({ required: false, description: 'Full name of the user' })
   @Column({ type: 'varchar', length: 150, nullable: true })
   fullName?: string;
-  
-  @ApiProperty({ type: String, required: false, description: 'Birthday of the user (YYYY-MM-DD)' })
+
+  @ApiProperty({
+    type: String,
+    required: false,
+    description: 'Birthday of the user (YYYY-MM-DD)',
+  })
   @Column({ type: 'date', nullable: true })
   birthday?: string;
 
@@ -63,6 +73,5 @@ export class User {
 
   @ApiProperty({ required: false })
   @Column({ type: 'varchar', length: 500, nullable: true })
-  avatarKey?: string; 
-    
+  avatarKey?: string;
 }
