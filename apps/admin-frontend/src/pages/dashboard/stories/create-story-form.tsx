@@ -14,10 +14,14 @@ const CreateStoryForm: React.FC<{ onSuccess?: () => void }> = ({ onSuccess }) =>
   const createStory = useCreateStory();
 
   const onFinish = async (values: StoryFormValues) => {
+    const videos: string[] = (values.videos || [])
+      .map((v) => v?.url)
+      .filter((url): url is string => typeof url === "string" && url.length > 0);
+
     const payload = {
       title: values.title,
       image: values.image,
-      videos: (values.videos || []).map((v) => v?.url).filter(Boolean),
+      videos,
     };
 
     try {
