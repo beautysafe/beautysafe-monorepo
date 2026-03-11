@@ -13,6 +13,8 @@ import {
   ShoppingOutlined,
   PlusOutlined,
   SearchOutlined,
+  PictureOutlined,
+  VideoCameraOutlined,
 } from "@ant-design/icons";
 import { Link, Outlet, useLocation, useNavigate } from "react-router-dom";
 import logo from "../../assets/logo.png";
@@ -74,6 +76,16 @@ const DashboardLayout: React.FC = () => {
       label: <Link to="/dashboard/brands">Marques</Link>,
     },
     {
+      key: "banners",
+      icon: <PictureOutlined />,
+      label: <Link to="/dashboard/banners">Bannières</Link>,
+    },
+    {
+      key: "stories",
+      icon: <VideoCameraOutlined />,
+      label: <Link to="/dashboard/stories">Stories</Link>,
+    },
+    {
       key: "announcements",
       icon: <NotificationOutlined />,
       label: <Link to="/dashboard/coming-soon">Annonces</Link>,
@@ -92,6 +104,8 @@ const DashboardLayout: React.FC = () => {
     if (location.pathname.startsWith("/dashboard/categories")) return ["categories"];
     if (location.pathname.startsWith("/dashboard/ingredients")) return ["ingredients"];
     if (location.pathname.startsWith("/dashboard/brands")) return ["brands"];
+    if (location.pathname.startsWith("/dashboard/banners")) return ["banners"];
+    if (location.pathname.startsWith("/dashboard/stories")) return ["stories"];
     if (location.pathname.startsWith("/dashboard/coming-soon")) return ["announcements"];
     return ["products-list"];
   };

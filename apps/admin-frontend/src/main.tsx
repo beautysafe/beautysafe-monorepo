@@ -21,6 +21,8 @@ import BrandsList from "./pages/dashboard/brands/list-brands";
 import ProductsByBrand from "./pages/dashboard/brands/list-product-by-brand";
 import { jwtDecode } from "jwt-decode";
 import SearchProductByEanPage from "./pages/dashboard/products/search-product";
+import BannersList from "./pages/dashboard/banners/list-banners";
+import StoriesList from "./pages/dashboard/stories/list-stories";
 const queryClient = new QueryClient();
 
 const isTokenValid = (token: string | null): boolean => {
@@ -71,6 +73,8 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
               <Route path="ingredients" element={<IngredientsList />} />
               <Route path="brands" element={<BrandsList />} />
               <Route path="brands/:brandId" element={<ProductsByBrand />} />
+              <Route path="banners" element={<BannersList />} />
+              <Route path="stories" element={<StoriesList />} />
             </Route>
           </Route>
 

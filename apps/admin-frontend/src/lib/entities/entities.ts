@@ -43,6 +43,20 @@ export interface Flag {
   totalProducts: number;
 }
 
+export interface Banner {
+  id: number;
+  title: string;
+  image: string;
+  description: string;
+}
+
+export interface Story {
+  id: number;
+  title: string;
+  image: string;
+  videos: string[];
+}
+
 export type ProductType = "Men" | "Women" | "Child" | "Baby";
 
 export interface ProductImage {
