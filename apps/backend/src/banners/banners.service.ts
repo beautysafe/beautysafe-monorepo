@@ -4,7 +4,7 @@ import { Repository } from 'typeorm';
 import { Banner } from './entities/banner.entity';
 import { CreateBannerDto } from './dto/create-banner.dto';
 import { UpdateBannerDto } from './dto/update-banner.dto';
-
+import { Product } from '../products/entities/product.entity';
 @Injectable()
 export class BannersService {
   constructor(
@@ -12,18 +12,32 @@ export class BannersService {
     private bannerRepository: Repository<Banner>,
   ) {}
 
-  create(createBannerDto: CreateBannerDto) {
-    const banner = this.bannerRepository.create(createBannerDto);
+  async create(createBannerDto: CreateBannerDto) {
+    const { productIds, ...bannerData } = createBannerDto;
+
+    const banner = this.bannerRepository.create(bannerData);
+
+    if (productIds?.length) {
+      banner.products = productIds.map((uid) => ({ uid }) as Product);
+    }
+
     return this.bannerRepository.save(banner);
   }
 
   findAll() {
-    return this.bannerRepository.find();
+    return this.bannerRepository.find({
+      relations: ['products'],
+    });
   }
 
   async findOne(id: number) {
-    const banner = await this.bannerRepository.findOne({ where: { id } });
+    const banner = await this.bannerRepository.findOne({
+      where: { id },
+      relations: ['products'],
+    });
+
     if (!banner) throw new NotFoundException('Banner not found');
+
     return banner;
   }
 

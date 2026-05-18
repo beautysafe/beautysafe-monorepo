@@ -1,5 +1,13 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsNotEmpty, IsString, IsUrl, MaxLength } from 'class-validator';
+import {
+  IsNotEmpty,
+  IsString,
+  IsUrl,
+  MaxLength,
+  IsArray,
+  IsInt,
+  IsOptional,
+} from 'class-validator';
 
 export class CreateBannerDto {
   @ApiProperty()
@@ -14,8 +22,23 @@ export class CreateBannerDto {
   @MaxLength(500)
   image: string;
 
-  @ApiProperty()
+  @ApiProperty({ description: 'HTML blog content' })
   @IsString()
   @IsNotEmpty()
-  description: string;
+  shortDescription: string;
+
+  @ApiProperty({ description: 'HTML blog content' })
+  @IsString()
+  @IsNotEmpty()
+  longDescriptionHtml: string;
+
+  @ApiProperty({
+    type: [Number],
+    required: false,
+    example: [1, 2, 3],
+  })
+  @IsOptional()
+  @IsArray()
+  @IsInt({ each: true })
+  productIds?: number[];
 }

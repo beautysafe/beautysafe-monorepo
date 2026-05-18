@@ -1,5 +1,12 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
+import {
+  Column,
+  Entity,
+  PrimaryGeneratedColumn,
+  ManyToMany,
+  JoinTable,
+} from 'typeorm';
+import { Product } from '../../products/entities/product.entity';
 
 @Entity()
 export class Banner {
@@ -15,7 +22,15 @@ export class Banner {
   @Column({ type: 'varchar', length: 500 })
   image: string;
 
-  @ApiProperty()
+  @ApiProperty({ description: 'HTML blog content' })
   @Column({ type: 'text' })
-  description: string;
+  shortDescription: string;
+
+  @ApiProperty({ description: 'HTML blog content' })
+  @Column({ type: 'text' })
+  longDescriptionHtml: string;
+
+  @ManyToMany(() => Product)
+  @JoinTable()
+  products: Product[];
 }
