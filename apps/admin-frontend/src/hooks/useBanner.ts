@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import type { Banner, CreateBannerPayload } from "../lib/entities";
+import type { CreateBannerPayload } from "../lib/entities";
 import {
   createBanner,
   deleteBanner,
