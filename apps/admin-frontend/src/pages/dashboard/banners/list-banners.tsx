@@ -37,12 +37,7 @@ const BannersList: React.FC = () => {
           <span style={{ color: "#bbb" }}>—</span>
         ),
     },
-    {
-      title: "Description",
-      dataIndex: "description",
-      key: "description",
-      render: (text: string) => <span>{text || "—"}</span>,
-    },
+
     {
       title: "Actions",
       key: "actions",

@@ -47,8 +47,18 @@ export interface Banner {
   id: number;
   title: string;
   image: string;
-  description: string;
+  shortDescription: string;
+  longDescriptionHtml: string;
+  products?: Product[];
 }
+
+export type CreateBannerPayload = {
+  title: string;
+  image: string;
+  shortDescription: string;
+  longDescriptionHtml: string;
+  productIds?: number[];
+};
 
 export interface Story {
   id: number;
