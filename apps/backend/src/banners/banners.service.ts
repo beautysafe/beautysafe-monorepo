@@ -33,7 +33,7 @@ export class BannersService {
   async findOne(id: number) {
     const banner = await this.bannerRepository.findOne({
       where: { id },
-      relations: ['products'],
+      relations: ['products', 'products.images'],
     });
 
     if (!banner) throw new NotFoundException('Banner not found');
