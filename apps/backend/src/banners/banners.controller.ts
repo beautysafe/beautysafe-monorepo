@@ -31,7 +31,7 @@ export class BannersController {
   findAll() {
     return this.bannersService.findAll();
   }
-
+  @Public()
   @Get(':id')
   findOne(@Param('id', ParseIntPipe) id: number) {
     return this.bannersService.findOne(id);
