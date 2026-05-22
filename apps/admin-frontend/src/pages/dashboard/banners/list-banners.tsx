@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { Table, Button, Modal, message, Space, Popconfirm } from "antd";
+import { useNavigate } from "react-router-dom";
 import type { Banner } from "../../../lib/entities";
 import { useBanners, useDeleteBanner } from "../../../hooks/useBanner";
 import CreateBannerForm from "./create-banner-form";
@@ -8,6 +9,7 @@ import type { ColumnsType } from "antd/es/table";
 const BannersList: React.FC = () => {
   const { data, isLoading } = useBanners();
   const deleteBanner = useDeleteBanner();
+  const navigate = useNavigate();
 
   const [creating, setCreating] = useState(false);
 
@@ -15,7 +17,20 @@ const BannersList: React.FC = () => {
 
   const columns: ColumnsType<Banner> = [
     { title: "ID", dataIndex: "id", key: "id" },
-    { title: "Titre", dataIndex: "title", key: "title" },
+    {
+      title: "Titre",
+      dataIndex: "title",
+      key: "title",
+      render: (title: string, record: Banner) => (
+        <Button
+          type="link"
+          onClick={() => navigate(`/dashboard/banners/${record.id}`)}
+          style={{ padding: 0 }}
+        >
+          {title}
+        </Button>
+      ),
+    },
     {
       title: "Image",
       dataIndex: "image",
@@ -43,6 +58,12 @@ const BannersList: React.FC = () => {
       key: "actions",
       render: (_: unknown, record: Banner) => (
         <Space>
+          <Button
+            type="link"
+            onClick={() => navigate(`/dashboard/banners/${record.id}`)}
+          >
+            Afficher
+          </Button>
           <Popconfirm
             title="Supprimer cette bannière ?"
             onConfirm={async () => {
