@@ -15,6 +15,10 @@ import { IngredientsModule } from './ingredients/ingredients.module';
 import { FamiliesModule } from './families/families.module';
 import { BannersModule } from './banners/banners.module';
 import { StoriesModule } from './stories/stories.module';
+import { GroupsModule } from './groups/groups.module';
+import { SubgroupsModule } from './subgroups/subgroups.module';
+import { ProductListsModule } from './product-lists/product-lists.module';
+import { JourneysModule } from './journeys/journeys.module';
 
 import { APP_GUARD } from '@nestjs/core';
 import { RolesGuard } from './common/guards/roles.guard';
@@ -45,6 +49,10 @@ import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
     FamiliesModule,
     BannersModule,
     StoriesModule,
+    GroupsModule,
+    SubgroupsModule,
+    ProductListsModule,
+    JourneysModule,
   ],
   providers: [
     AppService,

@@ -23,6 +23,12 @@ import { jwtDecode } from "jwt-decode";
 import SearchProductByEanPage from "./pages/dashboard/products/search-product";
 import BannersList from "./pages/dashboard/banners/list-banners";
 import StoriesList from "./pages/dashboard/stories/list-stories";
+import GroupsList from "./pages/dashboard/groups/list-groups";
+import GroupSubgroupsPage from "./pages/dashboard/groups/list-subgroups";
+import ProductListsPage from "./pages/dashboard/groups/list-product-lists";
+import ProductListProductsPage from "./pages/dashboard/groups/manage-product-list-products";
+import JourneysPage from "./pages/dashboard/groups/list-journeys";
+import JourneyManagePage from "./pages/dashboard/groups/manage-journey";
 const queryClient = new QueryClient();
 
 const isTokenValid = (token: string | null): boolean => {
@@ -75,6 +81,18 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
               <Route path="brands/:brandId" element={<ProductsByBrand />} />
               <Route path="banners" element={<BannersList />} />
               <Route path="stories" element={<StoriesList />} />
+              <Route path="groups" element={<GroupsList />} />
+              <Route path="groups/:groupId/subgroups" element={<GroupSubgroupsPage />} />
+              <Route
+                path="subgroups/:subgroupId/product-lists"
+                element={<ProductListsPage />}
+              />
+              <Route
+                path="product-lists/:productListId/products"
+                element={<ProductListProductsPage />}
+              />
+              <Route path="subgroups/:subgroupId/journeys" element={<JourneysPage />} />
+              <Route path="journeys/:journeyId" element={<JourneyManagePage />} />
             </Route>
           </Route>
 

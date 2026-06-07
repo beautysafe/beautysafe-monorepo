@@ -95,3 +95,67 @@ export type ProductsByFlagResponse = {
   page: number;
   limit: number;
 };
+
+export interface Group {
+  id: number;
+  name: string;
+  imageUrl?: string | null;
+  title: string;
+  description: string;
+  createdAt: string;
+  updatedAt: string;
+  subgroups?: SubGroupJourney[];
+}
+
+export interface SubGroupJourney {
+  id: number;
+  name: string;
+  imageUrl?: string | null;
+  createdAt: string;
+  updatedAt: string;
+  group?: Group;
+  productLists?: ProductList[];
+  journeys?: Journey[];
+}
+
+export interface ProductList {
+  id: number;
+  name: string;
+  title: string;
+  description: string;
+  createdAt: string;
+  updatedAt: string;
+  subgroup?: SubGroupJourney;
+  products?: Product[];
+}
+
+export interface Journey {
+  id: number;
+  name: string;
+  title: string;
+  description: string;
+  createdAt: string;
+  updatedAt: string;
+  subgroup?: SubGroupJourney;
+  phases?: JourneyPhase[];
+  ingredients?: Ingredient[];
+}
+
+export interface JourneyPhase {
+  id: number;
+  name: string;
+  htmlText: string;
+  sortOrder: number;
+  createdAt: string;
+  updatedAt: string;
+  products?: Product[];
+}
+
+export type PaginatedProductsResponse = {
+  data: Product[];
+  hasMore: boolean;
+  page: number;
+  limit: number;
+  total: number;
+  pageCount: number;
+};
