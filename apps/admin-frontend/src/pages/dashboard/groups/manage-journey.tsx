@@ -14,6 +14,8 @@ import {
 } from "antd";
 import type { ColumnsType } from "antd/es/table";
 import { useParams } from "react-router-dom";
+import ReactQuill from "react-quill-new";
+import "react-quill-new/dist/quill.snow.css";
 import type { Ingredient, JourneyPhase, Product } from "../../../lib/entities";
 import { useSearchIngredients } from "../../../hooks/useIngredient";
 import {
@@ -223,9 +225,21 @@ const JourneyManagePage: React.FC = () => {
           <Form.Item
             name="htmlText"
             label="HTML"
-            rules={[{ required: true, message: "Texte obligatoire" }]}
+            rules={[
+              {
+                validator: (_, value) => {
+                  const text = String(value ?? "")
+                    .replace(/<(.|\n)*?>/g, "")
+                    .replace(/&nbsp;/g, "")
+                    .trim();
+
+                  if (text) return Promise.resolve();
+                  return Promise.reject(new Error("Texte obligatoire"));
+                },
+              },
+            ]}
           >
-            <Input.TextArea rows={6} />
+            <ReactQuill theme="snow" style={{ height: 220, marginBottom: 48 }} />
           </Form.Item>
           <Form.Item name="sortOrder" label="Ordre">
             <InputNumber min={0} style={{ width: "100%" }} />

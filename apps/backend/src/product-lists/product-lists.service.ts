@@ -42,34 +42,28 @@ export class ProductListsService {
   }
 
   async findProducts(id: number, page = 1, limit = 20) {
-    const productList = await this.productListRepository.findOne({ where: { id } });
+    const productList = await this.productListRepository.findOne({
+      where: { id },
+      relations: ['products', 'products.images', 'products.brand'],
+    });
     if (!productList) throw new NotFoundException('ProductList not found');
 
     const take = Math.min(Math.max(limit, 1), 50);
-    const skip = (page - 1) * take;
-
-    const [data, total] = await this.productRepository
-      .createQueryBuilder('product')
-      .innerJoin(
-        'product_list_products',
-        'productListProduct',
-        'productListProduct."productUid" = product.uid',
-      )
-      .leftJoinAndSelect('product.images', 'images')
-      .leftJoinAndSelect('product.brand', 'brand')
-      .where('productListProduct."productListId" = :id', { id })
-      .orderBy('product.uid', 'DESC')
-      .skip(skip)
-      .take(take)
-      .getManyAndCount();
+    const currentPage = Math.max(page, 1);
+    const skip = (currentPage - 1) * take;
+    const products = [...(productList.products ?? [])].sort(
+      (a, b) => b.uid - a.uid,
+    );
+    const total = products.length;
+    const data = products.slice(skip, skip + take);
 
     return {
       data,
-      page,
+      page: currentPage,
       limit: take,
       total,
       pageCount: Math.ceil(total / take),
-      hasMore: page * take < total,
+      hasMore: currentPage * take < total,
     };
   }
 

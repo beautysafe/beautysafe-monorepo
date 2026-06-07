@@ -6,7 +6,6 @@ import type { Product } from "../../../lib/entities";
 import {
   useAddProductListProducts,
   useProductListById,
-  useProductListProducts,
   useRemoveProductListProduct,
 } from "../../../hooks/useProductList";
 
@@ -14,10 +13,15 @@ const ProductListProductsPage: React.FC = () => {
   const { productListId = "" } = useParams();
   const [page, setPage] = useState(1);
   const [ean, setEan] = useState("");
-  const { data: productList } = useProductListById(productListId);
-  const { data, isLoading } = useProductListProducts(productListId, page, 20);
+  const { data: productList, isLoading } = useProductListById(productListId);
   const addProducts = useAddProductListProducts();
   const removeProduct = useRemoveProductListProduct();
+  const pageSize = 20;
+
+  const products = Array.from(
+    new Map((productList?.products ?? []).map((product) => [product.uid, product])).values(),
+  );
+  const paginatedProducts = products.slice((page - 1) * pageSize, page * pageSize);
 
   const addByEan = async () => {
     const cleanEan = ean.trim();
@@ -77,13 +81,13 @@ const ProductListProductsPage: React.FC = () => {
       </Space.Compact>
       <Table
         columns={columns}
-        dataSource={data?.data ?? []}
+        dataSource={paginatedProducts}
         rowKey="uid"
         loading={isLoading}
         pagination={{
           current: page,
-          total: data?.total ?? 0,
-          pageSize: data?.limit ?? 20,
+          total: products.length,
+          pageSize,
           onChange: setPage,
         }}
       />
