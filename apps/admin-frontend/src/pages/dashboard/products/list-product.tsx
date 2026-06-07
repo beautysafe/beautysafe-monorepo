@@ -9,25 +9,34 @@ import {
   Modal,
   Spin,
 } from "antd";
+import type { ColumnsType } from "antd/es/table";
 import { useProductByEan, useProductsByFlag } from "../../../hooks/useProduct";
 import { useFlagById } from "../../../hooks/useFlag";
 import type { Product } from "../../../lib/entities";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import CreateProductForm from "./create-product-form";
 
+const cleanUrl = (value?: string | null): string | undefined => {
+  const url = value?.trim();
+  return url || undefined;
+};
+
 const ProductsList: React.FC = () => {
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
 
   const flagIdParam = searchParams.get("flagId");
   const flagId = flagIdParam ? Number(flagIdParam) : undefined;
+
+  const pageParam = searchParams.get("page");
+  const page = pageParam ? Number(pageParam) : 1;
+
+  const limit = 10;
 
   const { data: flagInfo, isLoading: isLoadingFlagInfo } = useFlagById(flagId!);
 
   const [createVisible, setCreateVisible] = React.useState(false);
   const [search, setSearch] = React.useState("");
-  const [page, setPage] = React.useState(1);
-  const [limit] = React.useState(10);
 
   const {
     data: foundProduct,
@@ -35,10 +44,8 @@ const ProductsList: React.FC = () => {
     error: searchError,
   } = useProductByEan(search);
 
-  const {
-    data: productsByFlag,
-    isLoading: isLoadingByFlag,
-  } = useProductsByFlag(flagId, page, limit);
+  const { data: productsByFlag, isLoading: isLoadingByFlag } =
+    useProductsByFlag(flagId, page, limit);
 
   React.useEffect(() => {
     if (searchError) {
@@ -47,26 +54,78 @@ const ProductsList: React.FC = () => {
   }, [searchError]);
 
   React.useEffect(() => {
-    setPage(1);
-  }, [flagId]);
+    const currentPage = searchParams.get("page");
 
-  const columns = [
-    { title: "ID", dataIndex: "uid" },
-    { title: "Nom", dataIndex: "name" },
+    if (!currentPage) {
+      const nextParams = new URLSearchParams(searchParams);
+      nextParams.set("page", "1");
+      setSearchParams(nextParams, { replace: true });
+    }
+  }, [searchParams, setSearchParams]);
+
+  const handlePageChange = (newPage: number) => {
+    const nextParams = new URLSearchParams(searchParams);
+    nextParams.set("page", String(newPage));
+
+    setSearchParams(nextParams);
+  };
+
+  const resetSearch = () => {
+    setSearch("");
+
+    const nextParams = new URLSearchParams(searchParams);
+    nextParams.set("page", "1");
+
+    setSearchParams(nextParams);
+  };
+
+  const columns: ColumnsType<Product> = [
+    {
+      title: "ID",
+      dataIndex: "uid",
+      key: "uid",
+      width: 90,
+    },
+    {
+      title: "Nom",
+      dataIndex: "name",
+      key: "name",
+      render: (name: string) => (
+        <span style={{ whiteSpace: "normal", wordBreak: "break-word" }}>
+          {name}
+        </span>
+      ),
+    },
     {
       title: "Marque",
       dataIndex: "brand",
-      render: (brand: { name: string }) => brand?.name || "—",
+      key: "brand",
+      render: (brand: { name?: string }) => brand?.name || "—",
     },
-    { title: "EAN", dataIndex: "ean" },
-    { title: "Score", dataIndex: "validScore" },
+    {
+      title: "EAN",
+      dataIndex: "ean",
+      key: "ean",
+      width: 160,
+    },
+    {
+      title: "Score",
+      dataIndex: "validScore",
+      key: "validScore",
+      width: 100,
+    },
     {
       title: "Image",
       dataIndex: "images",
-      render: (images: any[]) =>
-        images && images.length > 0 && images[0].thumbnail ? (
+      key: "images",
+      width: 90,
+      render: (images: any[]) => {
+        const imageUrl =
+          cleanUrl(images?.[0]?.thumbnail) || cleanUrl(images?.[0]?.image);
+
+        return imageUrl ? (
           <img
-            src={images[0].thumbnail}
+            src={imageUrl}
             alt="Produit"
             style={{
               width: 50,
@@ -78,7 +137,8 @@ const ProductsList: React.FC = () => {
           />
         ) : (
           <span style={{ color: "#bbb" }}>—</span>
-        ),
+        );
+      },
     },
   ];
 
@@ -117,26 +177,20 @@ const ProductsList: React.FC = () => {
             loading={isSearching}
             onSearch={(val) => {
               setSearch(val.trim());
+
+              const nextParams = new URLSearchParams(searchParams);
+              nextParams.set("page", "1");
+              setSearchParams(nextParams);
             }}
           />
         </Col>
 
         <Col>
-          <Button
-            onClick={() => {
-              setSearch("");
-            }}
-          >
-            Réinitialiser
-          </Button>
+          <Button onClick={resetSearch}>Réinitialiser</Button>
         </Col>
 
         <Col>
-          <Button
-            type="primary"
-            style={{ marginBottom: 16 }}
-            onClick={() => setCreateVisible(true)}
-          >
+          <Button type="primary" onClick={() => setCreateVisible(true)}>
             Ajouter un produit
           </Button>
         </Col>
@@ -144,21 +198,26 @@ const ProductsList: React.FC = () => {
 
       <Spin
         spinning={
-          isSearching || (!!flagId && (isLoadingByFlag || isLoadingFlagInfo))
+          isSearching || Boolean(flagId && (isLoadingByFlag || isLoadingFlagInfo))
         }
       >
         <Table<Product>
           dataSource={tableData}
           rowKey="uid"
           columns={columns}
+          scroll={{ x: 900 }}
           pagination={{
             current: page,
             pageSize: limit,
             total,
-            onChange: (newPage) => setPage(newPage),
+            showQuickJumper: true,
+            showSizeChanger: false,
+            onChange: handlePageChange,
           }}
           onRow={(record) => ({
-            onClick: () => navigate(`/dashboard/products/${record.uid}`),
+            onClick: () => {
+              navigate(`/dashboard/products/${record.uid}`);
+            },
             style: { cursor: "pointer" },
           })}
         />

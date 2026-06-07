@@ -22,6 +22,7 @@ import ProductsByBrand from "./pages/dashboard/brands/list-product-by-brand";
 import { jwtDecode } from "jwt-decode";
 import SearchProductByEanPage from "./pages/dashboard/products/search-product";
 import BannersList from "./pages/dashboard/banners/list-banners";
+import DetailBanner from "./pages/dashboard/banners/detail-banner";
 import StoriesList from "./pages/dashboard/stories/list-stories";
 import GroupsList from "./pages/dashboard/groups/list-groups";
 import GroupSubgroupsPage from "./pages/dashboard/groups/list-subgroups";
@@ -80,6 +81,7 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
               <Route path="brands" element={<BrandsList />} />
               <Route path="brands/:brandId" element={<ProductsByBrand />} />
               <Route path="banners" element={<BannersList />} />
+              <Route path="banners/:id" element={<DetailBanner />} />
               <Route path="stories" element={<StoriesList />} />
               <Route path="groups" element={<GroupsList />} />
               <Route path="groups/:groupId/subgroups" element={<GroupSubgroupsPage />} />
