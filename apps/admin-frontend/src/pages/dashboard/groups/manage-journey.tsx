@@ -223,7 +223,21 @@ const JourneyManagePage: React.FC = () => {
             <Input />
           </Form.Item>
           <Form.Item
-            label="Description"
+            name="htmlText"
+            label="HTML"
+            rules={[
+              {
+                validator: (_, value) => {
+                  const text = String(value ?? "")
+                    .replace(/<(.|\n)*?>/g, "")
+                    .replace(/&nbsp;/g, "")
+                    .trim();
+
+                  if (text) return Promise.resolve();
+                  return Promise.reject(new Error("Texte obligatoire"));
+                },
+              },
+            ]}
           >
             <ReactQuill theme="snow" style={{ height: 220, marginBottom: 48 }} />
           </Form.Item>
