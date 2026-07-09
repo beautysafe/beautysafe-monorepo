@@ -1,5 +1,5 @@
 import { api } from '../lib/api/api-client';
-import type { Product, ProductsByFlagResponse } from '../lib/entities';
+import type { PaginatedProductsResponse, Product, ProductsByFlagResponse } from '../lib/entities';
 
 // Create product
 export const createProduct = (data: Partial<Product>) =>
@@ -64,3 +64,32 @@ export const getProductsByBrand = (
   api.get<{ data: Product[]; total: number; page: number; pageCount: number }>(
     `/products/brand/${brandId}?page=${page}&limit=${limit}`
   );
+
+export type SearchProductsParams = {
+  brandIds?: number[];
+  categoryIds?: number[];
+  subCategoryIds?: number[];
+  subSubCategoryIds?: number[];
+  includeIngredientIds?: number[];
+  excludeIngredientIds?: number[];
+  requireAllIngredients?: boolean;
+  flagIds?: number[];
+  requireAllFlags?: boolean;
+  minScore?: number;
+  maxScore?: number;
+  page: number;
+  limit: number;
+};
+
+const serializeSearchParams = (params: SearchProductsParams) =>
+  Object.fromEntries(
+    Object.entries(params)
+      .filter(([, value]) => {
+        if (Array.isArray(value)) return value.length > 0;
+        return value !== undefined && value !== null;
+      })
+      .map(([key, value]) => [key, Array.isArray(value) ? value.join(",") : value])
+  );
+
+export const searchProducts = (params: SearchProductsParams) =>
+  api.get<PaginatedProductsResponse>("/products/search", serializeSearchParams(params));

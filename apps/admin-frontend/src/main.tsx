@@ -28,6 +28,7 @@ import GroupsList from "./pages/dashboard/groups/list-groups";
 import GroupSubgroupsPage from "./pages/dashboard/groups/list-subgroups";
 import ProductListsPage from "./pages/dashboard/groups/list-product-lists";
 import ProductListProductsPage from "./pages/dashboard/groups/manage-product-list-products";
+import SelectGroupProductsPage from "./pages/dashboard/groups/select-group-products";
 import JourneysPage from "./pages/dashboard/groups/list-journeys";
 import JourneyManagePage from "./pages/dashboard/groups/manage-journey";
 const queryClient = new QueryClient();
@@ -92,6 +93,10 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
               <Route
                 path="product-lists/:productListId/products"
                 element={<ProductListProductsPage />}
+              />
+              <Route
+                path="product-lists/:productListId/products/select-group"
+                element={<SelectGroupProductsPage />}
               />
               <Route path="subgroups/:subgroupId/journeys" element={<JourneysPage />} />
               <Route path="journeys/:journeyId" element={<JourneyManagePage />} />

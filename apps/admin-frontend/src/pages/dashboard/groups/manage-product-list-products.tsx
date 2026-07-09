@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { Button, Input, message, Popconfirm, Space, Table, Tag } from "antd";
 import type { ColumnsType } from "antd/es/table";
-import { useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import type { Product } from "../../../lib/entities";
 import {
   useAddProductListProducts,
@@ -11,6 +11,7 @@ import {
 
 const ProductListProductsPage: React.FC = () => {
   const { productListId = "" } = useParams();
+  const navigate = useNavigate();
   const [page, setPage] = useState(1);
   const [ean, setEan] = useState("");
   const { data: productList, isLoading } = useProductListById(productListId);
@@ -79,6 +80,13 @@ const ProductListProductsPage: React.FC = () => {
           Ajouter
         </Button>
       </Space.Compact>
+      <Button
+        type="primary"
+        onClick={() => navigate(`/dashboard/product-lists/${productListId}/products/select-group`)}
+        style={{ marginBottom: 16 }}
+      >
+        Ajouter un groupe de produits
+      </Button>
       <Table
         columns={columns}
         dataSource={paginatedProducts}
