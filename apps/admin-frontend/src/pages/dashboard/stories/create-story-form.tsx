@@ -1,35 +1,65 @@
 import React from "react";
-import { Button, Form, Input, Space, message } from "antd";
-import { MinusCircleOutlined, PlusOutlined } from "@ant-design/icons";
+import { Form, Input, message } from "antd";
 import { useCreateStory } from "../../../hooks/useStory";
+import {
+  ImageUploadField,
+  type ImageUploadValue,
+} from "../../../components/uploads/ImageUploadField";
+import {
+  VideoUploadField,
+  type VideoUploadValue,
+} from "../../../components/uploads/VideoUploadField";
+import { deleteUploadedFile } from "../../../services/upload.service";
 
 type StoryFormValues = {
   title: string;
-  image: string;
-  videos?: Array<{ url?: string }>;
 };
 
 const CreateStoryForm: React.FC<{ onSuccess?: () => void }> = ({ onSuccess }) => {
   const [form] = Form.useForm();
   const createStory = useCreateStory();
+  const [image, setImage] = React.useState<ImageUploadValue | null>(null);
+  const [videos, setVideos] = React.useState<VideoUploadValue[]>([]);
+  const [imageUploading, setImageUploading] = React.useState(false);
+  const [videosUploading, setVideosUploading] = React.useState(false);
+  const [uploadsCommitted, setUploadsCommitted] = React.useState(false);
 
   const onFinish = async (values: StoryFormValues) => {
-    const videos: string[] = (values.videos || [])
-      .map((v) => v?.url)
-      .filter((url): url is string => typeof url === "string" && url.length > 0);
+    if (!image) {
+      message.error("Image obligatoire");
+      return;
+    }
+    if (imageUploading || videosUploading) {
+      message.error("Attendez la fin des envois");
+      return;
+    }
 
     const payload = {
       title: values.title,
-      image: values.image,
-      videos,
+      image: image.url,
+      imageKey: image.storagePath,
+      videos: videos.map((video) => video.url),
+      videoKeys: videos.map((video) => video.storagePath || ""),
     };
 
     try {
       await createStory.mutateAsync(payload);
+      setUploadsCommitted(true);
+      setImage(null);
+      setVideos([]);
       message.success("Story créée !");
       form.resetFields();
-      onSuccess?.();
+      setTimeout(() => onSuccess?.(), 0);
     } catch {
+      const paths = [
+        image?.isNew ? image.storagePath : undefined,
+        ...videos.filter((video) => video.isNew).map((video) => video.storagePath),
+      ].filter((path): path is string => Boolean(path));
+      await Promise.all(
+        paths.map((path) => deleteUploadedFile(path).catch(() => undefined)),
+      );
+      setImage(null);
+      setVideos([]);
       message.error("Erreur lors de la création de la story");
     }
   };
@@ -40,29 +70,31 @@ const CreateStoryForm: React.FC<{ onSuccess?: () => void }> = ({ onSuccess }) =>
         <Input />
       </Form.Item>
 
-      <Form.Item name="image" label="Image (URL)" rules={[{ required: true, message: "Image obligatoire" }]}>
-        <Input placeholder="https://..." />
+      <Form.Item>
+        <ImageUploadField
+          label="Image"
+          folder="stories"
+          value={image}
+          onChange={setImage}
+          onUploadingChange={setImageUploading}
+          disabled={createStory.isPending}
+          committed={uploadsCommitted}
+          required
+        />
       </Form.Item>
 
-      <Form.List name="videos">
-        {(fields, { add, remove }) => (
-          <>
-            {fields.map(({ key, name, ...restField }) => (
-              <Space key={key} style={{ display: "flex" }}>
-                <Form.Item {...restField} name={[name, "url"]}>
-                  <Input placeholder="URL vidéo (optionnel)" />
-                </Form.Item>
-
-                <Button icon={<MinusCircleOutlined />} onClick={() => remove(name)} />
-              </Space>
-            ))}
-
-            <Button icon={<PlusOutlined />} onClick={() => add()} block>
-              Ajouter une vidéo
-            </Button>
-          </>
-        )}
-      </Form.List>
+      <Form.Item>
+        <VideoUploadField
+          label="Vidéos"
+          folder="story-videos"
+          value={videos}
+          onChange={setVideos}
+          onUploadingChange={setVideosUploading}
+          multiple
+          disabled={createStory.isPending}
+          committed={uploadsCommitted}
+        />
+      </Form.Item>
     </Form>
   );
 };

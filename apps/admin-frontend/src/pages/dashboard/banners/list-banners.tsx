@@ -1,17 +1,14 @@
-import React, { useState } from "react";
-import { Table, Button, Modal, message, Space, Popconfirm } from "antd";
+import React from "react";
+import { Table, Button, message, Space, Popconfirm, Tag } from "antd";
 import { useNavigate } from "react-router-dom";
 import type { Banner } from "../../../lib/entities";
 import { useBanners, useDeleteBanner } from "../../../hooks/useBanner";
-import CreateBannerForm from "./create-banner-form";
 import type { ColumnsType } from "antd/es/table";
 
 const BannersList: React.FC = () => {
   const { data, isLoading } = useBanners();
   const deleteBanner = useDeleteBanner();
   const navigate = useNavigate();
-
-  const [creating, setCreating] = useState(false);
 
   const banners: Banner[] = Array.isArray(data) ? data : [];
 
@@ -21,14 +18,24 @@ const BannersList: React.FC = () => {
       title: "Titre",
       dataIndex: "title",
       key: "title",
-      render: (title: string, record: Banner) => (
+      render: (title: string | null | undefined, record: Banner) => (
         <Button
           type="link"
           onClick={() => navigate(`/dashboard/banners/${record.id}`)}
           style={{ padding: 0 }}
         >
-          {title}
+          {title || `Bannière #${record.id}`}
         </Button>
+      ),
+    },
+    {
+      title: "Statut",
+      dataIndex: "published",
+      key: "published",
+      render: (published: boolean) => (
+        <Tag color={published ? "green" : "default"}>
+          {published ? "Publiée" : "Brouillon"}
+        </Tag>
       ),
     },
     {
@@ -64,11 +71,21 @@ const BannersList: React.FC = () => {
           >
             Afficher
           </Button>
+          <Button
+            type="link"
+            onClick={() => navigate(`/dashboard/banners/${record.id}/edit`)}
+          >
+            Modifier
+          </Button>
           <Popconfirm
             title="Supprimer cette bannière ?"
             onConfirm={async () => {
-              await deleteBanner.mutateAsync(record.id);
-              message.success("Bannière supprimée");
+              try {
+                await deleteBanner.mutateAsync(record.id);
+                message.success("Bannière supprimée");
+              } catch {
+                message.error("La suppression de la bannière a échoué");
+              }
             }}
             okText="Oui"
             cancelText="Non"
@@ -86,7 +103,7 @@ const BannersList: React.FC = () => {
     <>
       <Button
         type="primary"
-        onClick={() => setCreating(true)}
+        onClick={() => navigate("/dashboard/banners/create")}
         style={{ marginBottom: 16, float: "right" }}
       >
         Créer une bannière
@@ -99,26 +116,8 @@ const BannersList: React.FC = () => {
         loading={isLoading}
         pagination={false}
       />
-
-      <Modal
-        title="Créer une bannière"
-        open={creating}
-        onCancel={() => setCreating(false)}
-        onOk={() => {
-          const el = document.getElementById("create-banner-form");
-          if (el) {
-            el.dispatchEvent(new Event("submit", { cancelable: true, bubbles: true }));
-          }
-        }}
-        destroyOnClose
-        okText="Valider"
-        cancelText="Annuler"
-      >
-        <CreateBannerForm onSuccess={() => setCreating(false)} />
-      </Modal>
     </>
   );
 };
 
 export default BannersList;
-

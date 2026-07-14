@@ -1,4 +1,4 @@
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import {
   IsNotEmpty,
   IsString,
@@ -7,13 +7,14 @@ import {
   IsArray,
   IsInt,
   IsOptional,
+  IsBoolean,
 } from 'class-validator';
 
 export class CreateBannerDto {
-  @ApiProperty()
+  @ApiPropertyOptional({ nullable: true })
+  @IsOptional()
   @IsString()
-  @IsNotEmpty()
-  title: string;
+  title?: string;
 
   @ApiProperty({ description: 'Image URL' })
   @IsString()
@@ -22,15 +23,31 @@ export class CreateBannerDto {
   @MaxLength(500)
   image: string;
 
-  @ApiProperty({ description: 'HTML blog content' })
+  @ApiPropertyOptional({
+    description: 'Firebase Storage path returned by the upload endpoint',
+  })
+  @IsOptional()
   @IsString()
-  @IsNotEmpty()
-  shortDescription: string;
+  @MaxLength(500)
+  imageKey?: string;
+
+  @ApiPropertyOptional({
+    nullable: true,
+    description: 'HTML short description',
+  })
+  @IsOptional()
+  @IsString()
+  shortDescription?: string;
 
   @ApiProperty({ description: 'HTML blog content' })
   @IsString()
   @IsNotEmpty()
   longDescriptionHtml: string;
+
+  @ApiPropertyOptional({ default: false })
+  @IsOptional()
+  @IsBoolean()
+  published?: boolean;
 
   @ApiProperty({
     type: [Number],

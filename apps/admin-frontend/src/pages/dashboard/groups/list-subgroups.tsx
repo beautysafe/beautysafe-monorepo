@@ -9,6 +9,11 @@ import {
   useDeleteSubgroup,
   useUpdateSubgroup,
 } from "../../../hooks/useSubGroup";
+import {
+  ImageUploadField,
+  type ImageUploadValue,
+} from "../../../components/uploads/ImageUploadField";
+import { deleteUploadedFile } from "../../../services/upload.service";
 
 const GroupSubgroupsPage: React.FC = () => {
   const { groupId = "" } = useParams();
@@ -20,24 +25,65 @@ const GroupSubgroupsPage: React.FC = () => {
   const [form] = Form.useForm<Partial<SubGroupJourney>>();
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<SubGroupJourney | null>(null);
+  const [image, setImage] = useState<ImageUploadValue | null>(null);
+  const [imageUploading, setImageUploading] = useState(false);
+  const [uploadCommitted, setUploadCommitted] = useState(false);
 
   useEffect(() => {
-    if (editing) form.setFieldsValue(editing);
-    else form.resetFields();
+    if (editing) {
+      form.setFieldsValue(editing);
+      setImage(
+        editing.imageUrl
+          ? {
+              url: editing.imageUrl,
+              storagePath: editing.imageKey ?? undefined,
+              isNew: false,
+            }
+          : null,
+      );
+    } else {
+      form.resetFields();
+      setImage(null);
+    }
+    setUploadCommitted(false);
   }, [editing, form, open]);
 
   const submit = async (values: Partial<SubGroupJourney>) => {
     try {
+      if (imageUploading) {
+        message.error("Attendez la fin de l'envoi de l'image");
+        return;
+      }
+      const payload: Partial<SubGroupJourney> = {
+        ...values,
+        imageUrl: image?.url ?? null,
+        imageKey: image?.storagePath ?? null,
+      };
       if (editing) {
-        await updateSubgroup.mutateAsync({ id: editing.id, data: values });
+        await updateSubgroup.mutateAsync({ id: editing.id, data: payload });
         message.success("Sous-groupe mis à jour");
       } else {
-        await createSubgroup.mutateAsync({ groupId, data: values });
+        await createSubgroup.mutateAsync({ groupId, data: payload });
         message.success("Sous-groupe créé");
       }
-      setOpen(false);
-      setEditing(null);
+      setUploadCommitted(true);
+      setTimeout(() => {
+        setOpen(false);
+        setEditing(null);
+      }, 0);
     } catch {
+      if (image?.isNew && image.storagePath) {
+        await deleteUploadedFile(image.storagePath).catch(() => undefined);
+        setImage(
+          editing?.imageUrl
+            ? {
+                url: editing.imageUrl,
+                storagePath: editing.imageKey ?? undefined,
+                isNew: false,
+              }
+            : null,
+        );
+      }
       message.error("Erreur lors de l'enregistrement");
     }
   };
@@ -101,6 +147,10 @@ const GroupSubgroupsPage: React.FC = () => {
           setEditing(null);
         }}
         onOk={() => form.submit()}
+        okButtonProps={{
+          disabled: imageUploading,
+          loading: createSubgroup.isPending || updateSubgroup.isPending,
+        }}
         okText="Valider"
         cancelText="Annuler"
         destroyOnClose
@@ -109,8 +159,16 @@ const GroupSubgroupsPage: React.FC = () => {
           <Form.Item name="name" label="Nom" rules={[{ required: true, message: "Nom obligatoire" }]}>
             <Input />
           </Form.Item>
-          <Form.Item name="imageUrl" label="Image URL">
-            <Input placeholder="https://..." />
+          <Form.Item>
+            <ImageUploadField
+              label="Image"
+              folder="subgroups"
+              value={image}
+              onChange={setImage}
+              onUploadingChange={setImageUploading}
+              disabled={createSubgroup.isPending || updateSubgroup.isPending}
+              committed={uploadCommitted}
+            />
           </Form.Item>
         </Form>
       </Modal>

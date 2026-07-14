@@ -9,6 +9,11 @@ import {
   useGroups,
   useUpdateGroup,
 } from "../../../hooks/useGroup";
+import {
+  ImageUploadField,
+  type ImageUploadValue,
+} from "../../../components/uploads/ImageUploadField";
+import { deleteUploadedFile } from "../../../services/upload.service";
 
 const GroupsList: React.FC = () => {
   const navigate = useNavigate();
@@ -19,24 +24,65 @@ const GroupsList: React.FC = () => {
   const [form] = Form.useForm<Partial<Group>>();
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<Group | null>(null);
+  const [image, setImage] = useState<ImageUploadValue | null>(null);
+  const [imageUploading, setImageUploading] = useState(false);
+  const [uploadCommitted, setUploadCommitted] = useState(false);
 
   useEffect(() => {
-    if (editing) form.setFieldsValue(editing);
-    else form.resetFields();
+    if (editing) {
+      form.setFieldsValue(editing);
+      setImage(
+        editing.imageUrl
+          ? {
+              url: editing.imageUrl,
+              storagePath: editing.imageKey ?? undefined,
+              isNew: false,
+            }
+          : null,
+      );
+    } else {
+      form.resetFields();
+      setImage(null);
+    }
+    setUploadCommitted(false);
   }, [editing, form, open]);
 
   const submit = async (values: Partial<Group>) => {
     try {
+      if (imageUploading) {
+        message.error("Attendez la fin de l'envoi de l'image");
+        return;
+      }
+      const payload: Partial<Group> = {
+        ...values,
+        imageUrl: image?.url ?? null,
+        imageKey: image?.storagePath ?? null,
+      };
       if (editing) {
-        await updateGroup.mutateAsync({ id: editing.id, data: values });
+        await updateGroup.mutateAsync({ id: editing.id, data: payload });
         message.success("Groupe mis à jour");
       } else {
-        await createGroup.mutateAsync(values);
+        await createGroup.mutateAsync(payload);
         message.success("Groupe créé");
       }
-      setOpen(false);
-      setEditing(null);
+      setUploadCommitted(true);
+      setTimeout(() => {
+        setOpen(false);
+        setEditing(null);
+      }, 0);
     } catch {
+      if (image?.isNew && image.storagePath) {
+        await deleteUploadedFile(image.storagePath).catch(() => undefined);
+        setImage(
+          editing?.imageUrl
+            ? {
+                url: editing.imageUrl,
+                storagePath: editing.imageKey ?? undefined,
+                isNew: false,
+              }
+            : null,
+        );
+      }
       message.error("Erreur lors de l'enregistrement");
     }
   };
@@ -100,6 +146,10 @@ const GroupsList: React.FC = () => {
           setEditing(null);
         }}
         onOk={() => form.submit()}
+        okButtonProps={{
+          disabled: imageUploading,
+          loading: createGroup.isPending || updateGroup.isPending,
+        }}
         okText="Valider"
         cancelText="Annuler"
         destroyOnClose
@@ -108,8 +158,16 @@ const GroupsList: React.FC = () => {
           <Form.Item name="name" label="Nom" rules={[{ required: true, message: "Nom obligatoire" }]}>
             <Input />
           </Form.Item>
-          <Form.Item name="imageUrl" label="Image URL">
-            <Input placeholder="https://..." />
+          <Form.Item>
+            <ImageUploadField
+              label="Image"
+              folder="groups"
+              value={image}
+              onChange={setImage}
+              onUploadingChange={setImageUploading}
+              disabled={createGroup.isPending || updateGroup.isPending}
+              committed={uploadCommitted}
+            />
           </Form.Item>
           <Form.Item name="title" label="Titre" rules={[{ required: true, message: "Titre obligatoire" }]}>
             <Input />

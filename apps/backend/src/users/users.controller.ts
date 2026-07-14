@@ -9,14 +9,21 @@ import {
   Req,
   UploadedFile,
   UseInterceptors,
-  BadRequestException,
 } from '@nestjs/common';
-import { ApiBearerAuth, ApiConsumes, ApiBody, ApiTags } from '@nestjs/swagger';
+import {
+  ApiBadRequestResponse,
+  ApiBearerAuth,
+  ApiBody,
+  ApiConsumes,
+  ApiCreatedResponse,
+  ApiPayloadTooLargeResponse,
+  ApiTags,
+} from '@nestjs/swagger';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { UsersService } from './users.service';
-import { diskStorage } from 'multer';
-import { extname } from 'path';
+import { memoryStorage } from 'multer';
 import { UpdateMeDto } from './dto/update-me.dto';
+import { MAX_IMAGE_SIZE } from '../storage/file-validation';
 
 @ApiTags('users')
 @ApiBearerAuth()
@@ -72,32 +79,21 @@ export class UsersController {
       },
     },
   })
+  @ApiCreatedResponse({ description: 'Updated current-user response' })
+  @ApiBadRequestResponse({
+    description: 'Missing, empty, invalid, or unsupported image',
+  })
+  @ApiPayloadTooLargeResponse({ description: 'Image exceeds 10 MB' })
   @UseInterceptors(
     FileInterceptor('file', {
-      storage: diskStorage({
-        destination: './uploads/avatars',
-        filename: (req, file, cb) => {
-          const unique = `${Date.now()}-${Math.round(Math.random() * 1e9)}`;
-          cb(null, `${unique}${extname(file.originalname)}`);
-        },
-      }),
-      limits: { fileSize: 2 * 1024 * 1024 }, // 2MB
-      fileFilter: (req, file, cb) => {
-        if (!file.mimetype.startsWith('image/')) {
-          return cb(new BadRequestException('Only image files allowed'), false);
-        }
-        cb(null, true);
-      },
+      storage: memoryStorage(),
+      limits: { fileSize: MAX_IMAGE_SIZE },
     }),
   )
   async uploadAvatar(
     @Req() req: any,
     @UploadedFile() file: Express.Multer.File,
   ) {
-    if (!file) throw new BadRequestException('File is required');
-
-    // public URL (served by Nest static, see step 3)
-    const url = `${process.env.PUBLIC_BASE_URL || ''}/uploads/avatars/${file.filename}`;
-    return this.usersService.updateAvatar(req.user.userId, url, file.filename);
+    return this.usersService.updateAvatar(req.user.userId, file);
   }
 }

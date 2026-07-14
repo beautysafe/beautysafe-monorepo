@@ -96,3 +96,46 @@ Nest is an MIT-licensed open source project. It can grow thanks to the sponsors 
 ## License
 
 Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+
+## Firebase Storage
+
+All uploads are sent to this NestJS API using the existing JWT and administrator
+authorization guards. The admin frontend and mobile application do not use the
+Firebase Web SDK, and Firebase Authentication is not enabled by this integration.
+
+For local development:
+
+1. Open **Firebase Console > Project settings > Service accounts**.
+2. Generate a new private key for the Firebase Admin SDK.
+3. Store the downloaded file locally as
+   `apps/backend/secrets/firebase-service-account.json`. The `secrets` directory
+   and matching service-account filenames are ignored by Git; never commit or
+   share this file.
+4. Copy `.env.example` to `.env`. Set `GOOGLE_APPLICATION_CREDENTIALS` to the
+   **absolute** path of that JSON file and set `FIREBASE_STORAGE_BUCKET` to the
+   Firebase bucket name.
+5. Restart the backend after changing either environment variable.
+
+In production, store the service-account JSON outside the repository and use the
+platform's secret-file mechanism. Configure the absolute mounted file path in
+`GOOGLE_APPLICATION_CREDENTIALS`; do not put JSON credentials in source code or
+ordinary environment-variable values.
+
+Because clients never upload directly to Firebase, the recommended Firebase
+Storage Rules deny all direct reads and writes:
+
+```text
+rules_version = '2';
+
+service firebase.storage {
+  match /b/{bucket}/o {
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}
+```
+
+Deploy these rules from the Firebase Console or the production Firebase
+configuration repository. This repository has no Firebase CLI configuration, so
+the backend setup does not deploy rules automatically.

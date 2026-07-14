@@ -52,7 +52,6 @@ const ProductDetail: React.FC = () => {
     queryClient.invalidateQueries({ queryKey: ["product", id] });
 
     message.success("Product updated");
-    setEditVisible(false);
   };
 
   if (isLoading) return <div>Loading...</div>;
@@ -152,6 +151,7 @@ const ProductDetail: React.FC = () => {
         <EditProductForm
           initialValues={product}
           onFinish={handleUpdate}
+          onSaved={() => setEditVisible(false)}
           loading={updateProduct.isPending}
         />
       </Modal>

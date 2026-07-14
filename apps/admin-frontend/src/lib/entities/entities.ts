@@ -45,18 +45,32 @@ export interface Flag {
 
 export interface Banner {
   id: number;
-  title: string;
+  title?: string | null;
   image: string;
-  shortDescription: string;
+  imageKey?: string | null;
+  shortDescription?: string | null;
   longDescriptionHtml: string;
+  published: boolean;
   products?: Product[];
 }
 
 export type CreateBannerPayload = {
-  title: string;
+  title?: string;
   image: string;
-  shortDescription: string;
+  imageKey?: string;
+  shortDescription?: string;
   longDescriptionHtml: string;
+  published?: boolean;
+  productIds?: number[];
+};
+
+export type UpdateBannerPayload = {
+  title?: string;
+  image?: string;
+  imageKey?: string;
+  shortDescription?: string;
+  longDescriptionHtml?: string;
+  published?: boolean;
   productIds?: number[];
 };
 
@@ -64,7 +78,9 @@ export interface Story {
   id: number;
   title: string;
   image: string;
+  imageKey?: string | null;
   videos: string[];
+  videoKeys?: string[];
 }
 
 export type ProductType = "Men" | "Women" | "Child" | "Baby";
@@ -73,6 +89,8 @@ export interface ProductImage {
   id: number;
   image: string;
   thumbnail: string;
+  imageKey?: string | null;
+  thumbnailKey?: string | null;
 }
 
 export interface Product {
@@ -88,6 +106,13 @@ export interface Product {
   images: ProductImage[];
   composition: Ingredient[];
   flags: Flag[];
+  imageUrls?: string[];
+  thumbnailUrls?: string[];
+  imageKeys?: string[];
+  thumbnailKeys?: string[];
+  brandId?: number;
+  compositionIds?: number[];
+  flagIds?: number[];
 }
 export type ProductsByFlagResponse = {
   data: Product[];
@@ -100,6 +125,7 @@ export interface Group {
   id: number;
   name: string;
   imageUrl?: string | null;
+  imageKey?: string | null;
   title: string;
   description: string;
   createdAt: string;
@@ -111,6 +137,7 @@ export interface SubGroupJourney {
   id: number;
   name: string;
   imageUrl?: string | null;
+  imageKey?: string | null;
   createdAt: string;
   updatedAt: string;
   group?: Group;

@@ -22,6 +22,9 @@ export class SubGroup {
   @Column({ type: 'varchar', length: 500, nullable: true })
   imageUrl: string | null;
 
+  @Column({ type: 'varchar', length: 500, nullable: true })
+  imageKey?: string | null;
+
   @CreateDateColumn()
   createdAt: Date;
 

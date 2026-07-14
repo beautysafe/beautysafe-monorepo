@@ -7,7 +7,7 @@ import {
   IsOptional,
 } from 'class-validator';
 import { ProductType } from '../entities/product.entity';
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class CreateProductDto {
   @ApiProperty()
@@ -56,6 +56,22 @@ export class CreateProductDto {
   @IsArray()
   @IsOptional()
   thumbnailUrls?: string[];
+
+  @ApiPropertyOptional({
+    type: [String],
+    description: 'Firebase image paths aligned with imageUrls',
+  })
+  @IsArray()
+  @IsOptional()
+  imageKeys?: string[];
+
+  @ApiPropertyOptional({
+    type: [String],
+    description: 'Firebase thumbnail paths aligned with thumbnailUrls',
+  })
+  @IsArray()
+  @IsOptional()
+  thumbnailKeys?: string[];
 
   @ApiProperty()
   @IsArray()

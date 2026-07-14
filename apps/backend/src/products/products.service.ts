@@ -1,6 +1,6 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, In, Brackets } from 'typeorm';
+import { Repository, In } from 'typeorm';
 import { Product } from './entities/product.entity';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
@@ -12,10 +12,12 @@ import { ProductImage } from './entities/product-image.entity';
 import { Category } from '../categories/entities/category.entity';
 import { SubCategory } from '../subcategories/entities/subcategory.entity';
 import { SearchProductsDto } from './dto/search-products.dto';
-import { ParseArrayPipe, Query } from '@nestjs/common';
+import { FirebaseStorageService } from '../storage/firebase-storage.service';
 
 @Injectable()
 export class ProductsService {
+  private readonly logger = new Logger(ProductsService.name);
+
   constructor(
     @InjectRepository(Product)
     private productsRepository: Repository<Product>,
@@ -33,10 +35,24 @@ export class ProductsService {
     private flagsRepository: Repository<Flag>,
     @InjectRepository(ProductImage)
     private productImagesRepository: Repository<ProductImage>,
+    private readonly storage: FirebaseStorageService,
   ) {}
 
   // Create Product
   async create(createProductDto: CreateProductDto) {
+    const newKeys = [
+      ...(createProductDto.imageKeys ?? []),
+      ...(createProductDto.thumbnailKeys ?? []),
+    ];
+    try {
+      return await this.createPersist(createProductDto);
+    } catch (error) {
+      await this.cleanupFiles(newKeys);
+      throw error;
+    }
+  }
+
+  private async createPersist(createProductDto: CreateProductDto) {
     const {
       name,
       validScore,
@@ -48,6 +64,8 @@ export class ProductsService {
       subSubCategoryId,
       imageUrls = [],
       thumbnailUrls = [],
+      imageKeys = [],
+      thumbnailKeys = [],
       compositionIds = [],
       flagIds = [],
     } = createProductDto;
@@ -98,6 +116,8 @@ export class ProductsService {
         return this.productImagesRepository.create({
           image: imgUrl,
           thumbnail: thumbnailUrls[i] || imgUrl,
+          imageKey: imageKeys[i] || null,
+          thumbnailKey: thumbnailKeys[i] || null,
         });
       },
     );
@@ -138,6 +158,34 @@ export class ProductsService {
 
   // Update Product
   async update(uid: number, updateProductDto: UpdateProductDto) {
+    let previousKeys: string[] = [];
+    const nextKeys = [
+      ...(updateProductDto.imageKeys ?? []),
+      ...(updateProductDto.thumbnailKeys ?? []),
+    ];
+    try {
+      const existing = await this.findOne(uid);
+      previousKeys = existing.images.flatMap((image) =>
+        [image.imageKey, image.thumbnailKey].filter((key): key is string =>
+          Boolean(key),
+        ),
+      );
+      const saved = await this.updatePersist(uid, updateProductDto);
+      if (updateProductDto.imageUrls || updateProductDto.thumbnailUrls) {
+        await this.cleanupFiles(
+          previousKeys.filter((key) => !nextKeys.includes(key)),
+        );
+      }
+      return saved;
+    } catch (error) {
+      await this.cleanupFiles(
+        nextKeys.filter((key) => !previousKeys.includes(key)),
+      );
+      throw error;
+    }
+  }
+
+  private async updatePersist(uid: number, updateProductDto: UpdateProductDto) {
     const product = await this.findOne(uid);
     const originalCategoryId = product.category?.id;
 
@@ -212,13 +260,17 @@ export class ProductsService {
       });
     }
 
-    if (updateProductDto.imageUrls || updateProductDto.thumbnailUrls) {
-      await this.productImagesRepository.delete({ product: { uid } });
+    const replaceImages = Boolean(
+      updateProductDto.imageUrls || updateProductDto.thumbnailUrls,
+    );
+    if (replaceImages) {
       const images: ProductImage[] = (updateProductDto.imageUrls ?? []).map(
         (imgUrl, i) => {
           return this.productImagesRepository.create({
             image: imgUrl,
             thumbnail: (updateProductDto.thumbnailUrls ?? [])[i] || imgUrl,
+            imageKey: (updateProductDto.imageKeys ?? [])[i] || null,
+            thumbnailKey: (updateProductDto.thumbnailKeys ?? [])[i] || null,
           });
         },
       );
@@ -226,6 +278,12 @@ export class ProductsService {
     }
 
     Object.assign(product, updateProductDto);
+    if (replaceImages) {
+      return this.productsRepository.manager.transaction(async (manager) => {
+        await manager.delete(ProductImage, { product: { uid } });
+        return manager.save(Product, product);
+      });
+    }
     return this.productsRepository.save(product);
   }
 
@@ -240,7 +298,13 @@ export class ProductsService {
       await this.categoriesRepository.save(category);
     }
 
-    return this.productsRepository.remove(product);
+    const keys = product.images.flatMap((image) => [
+      image.imageKey,
+      image.thumbnailKey,
+    ]);
+    const deleted = await this.productsRepository.remove(product);
+    await this.cleanupFiles(keys);
+    return deleted;
   }
 
   // Get Product by ean
@@ -629,5 +693,22 @@ export class ProductsService {
       pageCount: Math.ceil(total / take),
       hasMore: page * take < total,
     };
+  }
+
+  private async cleanupFiles(paths: Array<string | null | undefined>) {
+    await Promise.all(
+      paths
+        .filter((path): path is string => Boolean(path))
+        .map(async (path) => {
+          try {
+            await this.storage.deleteFile(path);
+          } catch (error) {
+            this.logger.error(
+              `Firebase cleanup failed for product object ${path}`,
+              error instanceof Error ? error.stack : String(error),
+            );
+          }
+        }),
+    );
   }
 }

@@ -4,19 +4,24 @@ import {
   Input,
   InputNumber,
   Button,
-  Space,
   Divider,
   Select,
   Tag,
+  message,
 } from "antd";
-import { MinusCircleOutlined, PlusOutlined } from "@ant-design/icons";
 import type { Product } from "../../../lib/entities";
 import { useSearchIngredients } from "../../../hooks/useIngredient";
 import { useFlags } from "../../../hooks/useFlag";
 import { useSearchBrands } from "../../../hooks/useBrand";
+import {
+  MultipleProductImageUpload,
+  type ProductImageUploadValue,
+} from "../../../components/uploads/MultipleProductImageUpload";
+import { deleteUploadedFile } from "../../../services/upload.service";
 interface EditProductFormProps {
   initialValues: Partial<Product>;
-  onFinish: (values: any) => void;
+  onFinish: (values: any) => Promise<void>;
+  onSaved?: () => void;
   loading: boolean;
 }
 
@@ -52,9 +57,13 @@ const getIngredientLabel = (ingredient: any) => {
 const EditProductForm: React.FC<EditProductFormProps> = ({
   initialValues,
   onFinish,
+  onSaved,
   loading,
 }) => {
   const [form] = Form.useForm();
+  const [images, setImages] = React.useState<ProductImageUploadValue[]>([]);
+  const [imagesUploading, setImagesUploading] = React.useState(false);
+  const [uploadsCommitted, setUploadsCommitted] = React.useState(false);
   const [brandSearch, setBrandSearch] = React.useState("");
   const { data: searchedBrands, isLoading: isSearchingBrands } =
     useSearchBrands(brandSearch);
@@ -139,15 +148,20 @@ const EditProductForm: React.FC<EditProductFormProps> = ({
     setSelectedIngredients(initialIngredientObjects);
     setSelectedSpecialFlagIds(initialSpecial);
     setSelectedCategoryFlagIds(initialCategory);
+    setImages(
+      Array.isArray(initialValues.images)
+        ? initialValues.images.map((image) => ({
+            imageUrl: image.image,
+            imagePath: image.imageKey ?? undefined,
+            thumbnailUrl: image.thumbnail || image.image,
+            thumbnailPath: image.thumbnailKey ?? undefined,
+            isNew: false,
+          }))
+        : [],
+    );
 
     form.setFieldsValue({
       ...initialValues,
-      images: Array.isArray(initialValues.images)
-        ? initialValues.images.map((img: any) => ({
-            image: img.image,
-            thumbnail: img.thumbnail,
-          }))
-        : [],
       compositionIds: initialIngredientObjects.map((ing: any) => ing.id),
       specialFlagIds: initialSpecial,
       categoryFlagIds: initialCategory,
@@ -232,24 +246,40 @@ const EditProductForm: React.FC<EditProductFormProps> = ({
     return Array.from(result);
   };
 
-  const handleFinish = (values: any) => {
+  const cleanupNewImages = async () => {
+    const paths = images
+      .filter((image) => image.isNew)
+      .flatMap((image) => [image.imagePath, image.thumbnailPath])
+      .filter((path): path is string => Boolean(path));
+    await Promise.all(
+      paths.map((path) => deleteUploadedFile(path).catch(() => undefined)),
+    );
+  };
+
+  const handleFinish = async (values: any) => {
     const payload = {
       name: values.name,
       validScore: values.validScore,
       ean: values.ean,
       type: values.type,
       brandId: values.brandId ?? (initialValues as any)?.brand?.id,
-      imageUrls: values.images
-        ? values.images.map((img: any) => img.image).filter(Boolean)
-        : [],
-      thumbnailUrls: values.images
-        ? values.images.map((img: any) => img.thumbnail || img.image).filter(Boolean)
-        : [],
+      imageUrls: images.map((image) => image.imageUrl),
+      thumbnailUrls: images.map((image) => image.thumbnailUrl),
+      imageKeys: images.map((image) => image.imagePath || ""),
+      thumbnailKeys: images.map((image) => image.thumbnailPath || ""),
       compositionIds: values.compositionIds ?? [],
       flagIds: buildFinalFlagIds(),
     };
 
-    onFinish(payload);
+    try {
+      await onFinish(payload);
+      setUploadsCommitted(true);
+      setTimeout(() => onSaved?.(), 0);
+    } catch {
+      await cleanupNewImages();
+      setImages((current) => current.filter((image) => !image.isNew));
+      message.error("Erreur lors de la mise à jour du produit");
+    }
   };
 
   return (
@@ -302,49 +332,13 @@ const EditProductForm: React.FC<EditProductFormProps> = ({
 
       <Divider>Images</Divider>
 
-      <Form.List name="images">
-        {(fields, { add, remove }) => (
-          <>
-            {fields.map(({ key, name, ...restField }) => (
-              <Space
-                key={key}
-                style={{ display: "flex", marginBottom: 8 }}
-                align="baseline"
-              >
-                <Form.Item
-                  {...restField}
-                  name={[name, "image"]}
-                  rules={[{ required: true, message: "URL de l'image requise" }]}
-                >
-                  <Input placeholder="URL image" />
-                </Form.Item>
-
-                <Form.Item {...restField} name={[name, "thumbnail"]}>
-                  <Input placeholder="URL thumbnail (optionnel)" />
-                </Form.Item>
-
-                <Button
-                  type="link"
-                  danger
-                  icon={<MinusCircleOutlined />}
-                  onClick={() => remove(name)}
-                />
-              </Space>
-            ))}
-
-            <Form.Item>
-              <Button
-                type="dashed"
-                onClick={() => add()}
-                icon={<PlusOutlined />}
-                block
-              >
-                Ajouter une image
-              </Button>
-            </Form.Item>
-          </>
-        )}
-      </Form.List>
+      <MultipleProductImageUpload
+        value={images}
+        onChange={setImages}
+        onUploadingChange={setImagesUploading}
+        disabled={loading}
+        committed={uploadsCommitted}
+      />
 
       <Divider>Ingrédients</Divider>
 
@@ -476,7 +470,13 @@ const EditProductForm: React.FC<EditProductFormProps> = ({
       </div>
 
       <Form.Item>
-        <Button htmlType="submit" type="primary" loading={loading} block>
+        <Button
+          htmlType="submit"
+          type="primary"
+          loading={loading}
+          disabled={imagesUploading}
+          block
+        >
           Enregistrer
         </Button>
       </Form.Item>

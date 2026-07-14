@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import type { CreateBannerPayload } from "../lib/entities";
+import type { CreateBannerPayload, UpdateBannerPayload } from "../lib/entities";
 import {
   createBanner,
   deleteBanner,
@@ -41,9 +41,12 @@ export function useUpdateBanner() {
       data,
     }: {
       id: number | string;
-      data: Partial<CreateBannerPayload>;
+      data: UpdateBannerPayload;
     }) => updateBanner(id, data),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["banners"] }),
+    onSuccess: (_data, variables) => {
+      queryClient.invalidateQueries({ queryKey: ["banners"] });
+      queryClient.invalidateQueries({ queryKey: ["banner", variables.id] });
+    },
   });
 }
 

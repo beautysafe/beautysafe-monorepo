@@ -23,6 +23,8 @@ import { jwtDecode } from "jwt-decode";
 import SearchProductByEanPage from "./pages/dashboard/products/search-product";
 import BannersList from "./pages/dashboard/banners/list-banners";
 import DetailBanner from "./pages/dashboard/banners/detail-banner";
+import CreateBannerPage from "./pages/dashboard/banners/create-banner";
+import EditBannerPage from "./pages/dashboard/banners/edit-banner";
 import StoriesList from "./pages/dashboard/stories/list-stories";
 import GroupsList from "./pages/dashboard/groups/list-groups";
 import GroupSubgroupsPage from "./pages/dashboard/groups/list-subgroups";
@@ -63,12 +65,18 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
 
           <Route element={<ProtectedRoute />}>
             <Route path="/dashboard/*" element={<DashboardLayout />}>
-              <Route index element={<Navigate to="products/search" replace />} />
+              <Route
+                index
+                element={<Navigate to="products/search" replace />}
+              />
               <Route path="coming-soon" element={<ComingSoon />} />
               <Route path="products" element={<ProductsList />} />
               <Route path="products/:id" element={<ProductDetail />} />
               <Route path="products/create" element={<CreateProductPage />} />
-              <Route path="products/search" element={<SearchProductByEanPage />} />
+              <Route
+                path="products/search"
+                element={<SearchProductByEanPage />}
+              />
               <Route path="categories" element={<CategoriesPage />} />
               <Route
                 path="categories/:categoryId"
@@ -82,10 +90,15 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
               <Route path="brands" element={<BrandsList />} />
               <Route path="brands/:brandId" element={<ProductsByBrand />} />
               <Route path="banners" element={<BannersList />} />
+              <Route path="banners/create" element={<CreateBannerPage />} />
+              <Route path="banners/:id/edit" element={<EditBannerPage />} />
               <Route path="banners/:id" element={<DetailBanner />} />
               <Route path="stories" element={<StoriesList />} />
               <Route path="groups" element={<GroupsList />} />
-              <Route path="groups/:groupId/subgroups" element={<GroupSubgroupsPage />} />
+              <Route
+                path="groups/:groupId/subgroups"
+                element={<GroupSubgroupsPage />}
+              />
               <Route
                 path="subgroups/:subgroupId/product-lists"
                 element={<ProductListsPage />}
@@ -98,8 +111,14 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
                 path="product-lists/:productListId/products/select-group"
                 element={<SelectGroupProductsPage />}
               />
-              <Route path="subgroups/:subgroupId/journeys" element={<JourneysPage />} />
-              <Route path="journeys/:journeyId" element={<JourneyManagePage />} />
+              <Route
+                path="subgroups/:subgroupId/journeys"
+                element={<JourneysPage />}
+              />
+              <Route
+                path="journeys/:journeyId"
+                element={<JourneyManagePage />}
+              />
             </Route>
           </Route>
 
@@ -107,5 +126,5 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
         </Routes>
       </BrowserRouter>
     </QueryClientProvider>
-  </React.StrictMode>
+  </React.StrictMode>,
 );

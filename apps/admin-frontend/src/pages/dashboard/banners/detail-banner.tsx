@@ -1,11 +1,9 @@
-import React, { useState } from "react";
+import React from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Card, Button, Modal, message, Spin, Empty, Image, Table } from "antd";
 import type { ColumnsType } from "antd/es/table";
-import { useQueryClient } from "@tanstack/react-query";
 
 import { useBannerById, useDeleteBanner } from "../../../hooks/useBanner";
-import EditBannerForm from "./edit-banner";
 import type { Product } from "../../../lib/entities";
 
 const cleanUrl = (value?: string | null): string | undefined => {
@@ -31,8 +29,6 @@ const getProductImageUrl = (product: Product): string | undefined => {
 const DetailBanner: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const queryClient = useQueryClient();
-  const [editVisible, setEditVisible] = useState(false);
 
   const { data: banner, isLoading } = useBannerById(id as string);
   const deleteBanner = useDeleteBanner();
@@ -210,18 +206,22 @@ const DetailBanner: React.FC = () => {
       <div className="detail-banner-page">
         <Card
           className="detail-banner-card"
-          title={banner.title}
+          title={banner.title || `Bannière #${banner.id}`}
           bodyStyle={{ maxWidth: "100%", overflow: "hidden" }}
           extra={
             <>
               <Button
-                onClick={() => setEditVisible(true)}
+                onClick={() => navigate(`/dashboard/banners/${banner.id}/edit`)}
                 type="primary"
                 style={{ marginRight: 8 }}
               >
                 Modifier
               </Button>
-              <Button danger onClick={handleDelete} loading={deleteBanner.isPending}>
+              <Button
+                danger
+                onClick={handleDelete}
+                loading={deleteBanner.isPending}
+              >
                 Supprimer
               </Button>
             </>
@@ -232,7 +232,7 @@ const DetailBanner: React.FC = () => {
               {bannerImage ? (
                 <Image
                   src={bannerImage}
-                  alt={banner.title}
+                  alt={banner.title || "Bannière"}
                   width="100%"
                   style={{
                     maxHeight: 280,
@@ -311,27 +311,6 @@ const DetailBanner: React.FC = () => {
             )}
           </Card>
         </Card>
-
-        <Modal
-          open={editVisible}
-          title="Modifier la bannière"
-          onCancel={() => setEditVisible(false)}
-          footer={null}
-          destroyOnClose
-          width={900}
-        >
-          {banner && (
-            <EditBannerForm
-              bannerId={id as string}
-              initialValues={banner}
-              onSuccess={() => {
-                queryClient.invalidateQueries({ queryKey: ["banner", id] });
-                message.success("Bannière mise à jour avec succès !");
-                setEditVisible(false);
-              }}
-            />
-          )}
-        </Modal>
       </div>
     </>
   );

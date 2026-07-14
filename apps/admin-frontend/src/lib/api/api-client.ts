@@ -21,3 +21,5 @@ export const api = {
   delete: <T = any>(url: string, params?: object, headers?: object) =>
     axiosInstance.delete<T>(url, { params, headers }).then((res) => res.data),
 };
+
+export { axiosInstance };

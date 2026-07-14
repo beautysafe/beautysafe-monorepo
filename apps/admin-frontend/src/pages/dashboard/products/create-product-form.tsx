@@ -7,14 +7,17 @@ import {
   Divider,
   Select,
   Tag,
-  Space,
   message,
 } from "antd";
-import { MinusCircleOutlined, PlusOutlined } from "@ant-design/icons";
 import { useCreateProduct } from "../../../hooks/useProduct";
 import { useSearchBrands } from "../../../hooks/useBrand";
 import { useSearchIngredients } from "../../../hooks/useIngredient";
 import { useFlags } from "../../../hooks/useFlag";
+import {
+  MultipleProductImageUpload,
+  type ProductImageUploadValue,
+} from "../../../components/uploads/MultipleProductImageUpload";
+import { deleteUploadedFile } from "../../../services/upload.service";
 
 const flagNamesFr: Record<string, string> = {
   BEST_PRODUCT: "Meilleur produit",
@@ -47,6 +50,9 @@ const getIngredientLabel = (ingredient: any) =>
 const CreateProductForm: React.FC<{ onSuccess?: () => void }> = ({ onSuccess }) => {
   const [form] = Form.useForm();
   const createProduct = useCreateProduct();
+  const [images, setImages] = React.useState<ProductImageUploadValue[]>([]);
+  const [imagesUploading, setImagesUploading] = React.useState(false);
+  const [uploadsCommitted, setUploadsCommitted] = React.useState(false);
 
   const [brandSearch, setBrandSearch] = React.useState("");
   const { data: brands = [], isLoading: brandsLoading } = useSearchBrands(brandSearch);
@@ -114,28 +120,43 @@ const CreateProductForm: React.FC<{ onSuccess?: () => void }> = ({ onSuccess }) 
     return Array.from(result);
   };
 
-  const onFinish = (values: any) => {
+  const cleanupNewImages = async () => {
+    const paths = images
+      .filter((image) => image.isNew)
+      .flatMap((image) => [image.imagePath, image.thumbnailPath])
+      .filter((path): path is string => Boolean(path));
+    await Promise.all(
+      paths.map((path) => deleteUploadedFile(path).catch(() => undefined)),
+    );
+  };
+
+  const onFinish = async (values: any) => {
     const payload = {
       name: values.name,
       ean: values.ean,
       validScore: values.validScore,
       type: values.type,
       brandId: values.brandId,
-      imageUrls: values.images?.map((img: any) => img.image) || [],
-      thumbnailUrls:
-        values.images?.map((img: any) => img.thumbnail || img.image) || [],
+      imageUrls: images.map((image) => image.imageUrl),
+      thumbnailUrls: images.map((image) => image.thumbnailUrl),
+      imageKeys: images.map((image) => image.imagePath || ""),
+      thumbnailKeys: images.map((image) => image.thumbnailPath || ""),
       compositionIds: values.compositionIds || [],
       flagIds: buildFinalFlagIds(),
     };
 
-    createProduct.mutate(payload, {
-      onSuccess: () => {
-        message.success("Produit créé !");
-        form.resetFields();
-        onSuccess?.();
-      },
-      onError: () => message.error("Erreur lors de la création du produit"),
-    });
+    try {
+      await createProduct.mutateAsync(payload);
+      setUploadsCommitted(true);
+      setImages([]);
+      message.success("Produit créé !");
+      form.resetFields();
+      setTimeout(() => onSuccess?.(), 0);
+    } catch {
+      await cleanupNewImages();
+      setImages([]);
+      message.error("Erreur lors de la création du produit");
+    }
   };
 
   return (
@@ -174,32 +195,13 @@ const CreateProductForm: React.FC<{ onSuccess?: () => void }> = ({ onSuccess }) 
 
       <Divider>Images</Divider>
 
-      <Form.List name="images">
-        {(fields, { add, remove }) => (
-          <>
-            {fields.map(({ key, name, ...restField }) => (
-              <Space key={key} style={{ display: "flex" }}>
-                <Form.Item {...restField} name={[name, "image"]} rules={[{ required: true }]}>
-                  <Input placeholder="URL image" />
-                </Form.Item>
-
-                <Form.Item {...restField} name={[name, "thumbnail"]}>
-                  <Input placeholder="URL thumbnail" />
-                </Form.Item>
-
-                <Button
-                  icon={<MinusCircleOutlined />}
-                  onClick={() => remove(name)}
-                />
-              </Space>
-            ))}
-
-            <Button icon={<PlusOutlined />} onClick={() => add()} block>
-              Ajouter une image
-            </Button>
-          </>
-        )}
-      </Form.List>
+      <MultipleProductImageUpload
+        value={images}
+        onChange={setImages}
+        onUploadingChange={setImagesUploading}
+        disabled={createProduct.isPending}
+        committed={uploadsCommitted}
+      />
 
       <Divider>Ingrédients</Divider>
 
@@ -252,6 +254,7 @@ const CreateProductForm: React.FC<{ onSuccess?: () => void }> = ({ onSuccess }) 
           type="primary"
           htmlType="submit"
           loading={createProduct.isPending}
+          disabled={imagesUploading}
           block
         >
           Créer le produit

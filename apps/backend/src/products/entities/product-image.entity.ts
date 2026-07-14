@@ -12,6 +12,12 @@ export class ProductImage {
   @Column()
   thumbnail: string;
 
+  @Column({ type: 'varchar', length: 500, nullable: true })
+  imageKey?: string | null;
+
+  @Column({ type: 'varchar', length: 500, nullable: true })
+  thumbnailKey?: string | null;
+
   @ManyToOne(() => Product, (product) => product.images, {
     onDelete: 'CASCADE',
   })
