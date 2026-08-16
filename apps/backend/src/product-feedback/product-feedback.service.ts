@@ -13,6 +13,7 @@ import {
   calculateFeedbackAverage,
   roundRating,
 } from './product-feedback.utils';
+import { ProductRatingAggregationService } from './product-rating-aggregation.service';
 
 @Injectable()
 export class ProductFeedbackService {
@@ -21,6 +22,7 @@ export class ProductFeedbackService {
     private readonly feedbackRepository: Repository<ProductFeedback>,
     @InjectRepository(Product)
     private readonly productsRepository: Repository<Product>,
+    private readonly ratingAggregation: ProductRatingAggregationService,
   ) {}
 
   async upsert(
@@ -84,32 +86,7 @@ export class ProductFeedbackService {
 
   async getSummary(productId: number) {
     await this.ensureProduct(productId);
-    const raw = await this.feedbackRepository
-      .createQueryBuilder('feedback')
-      .select('COUNT(feedback.id)', 'ratingsCount')
-      .addSelect(
-        'AVG((feedback.effectivenessRating + feedback.needsRating + feedback.repurchaseRating) / 3.0)',
-        'averageRating',
-      )
-      .addSelect('AVG(feedback.effectivenessRating)', 'effectivenessAverage')
-      .addSelect('AVG(feedback.needsRating)', 'needsAverage')
-      .addSelect('AVG(feedback.repurchaseRating)', 'repurchaseAverage')
-      .where('feedback.productId = :productId', { productId })
-      .getRawOne<{
-        ratingsCount: string;
-        averageRating: string | null;
-        effectivenessAverage: string | null;
-        needsAverage: string | null;
-        repurchaseAverage: string | null;
-      }>();
-
-    return {
-      ratingsCount: Number(raw?.ratingsCount ?? 0),
-      averageRating: this.roundRaw(raw?.averageRating),
-      effectivenessAverage: this.roundRaw(raw?.effectivenessAverage),
-      needsAverage: this.roundRaw(raw?.needsAverage),
-      repurchaseAverage: this.roundRaw(raw?.repurchaseAverage),
-    };
+    return this.ratingAggregation.getForProduct(productId);
   }
 
   async findAllForAdmin(query: AdminProductFeedbackQueryDto) {
@@ -184,11 +161,5 @@ export class ProductFeedbackService {
   private withAverage(feedback: ProductFeedback) {
     feedback.averageRating = roundRating(calculateFeedbackAverage(feedback));
     return feedback;
-  }
-
-  private roundRaw(value?: string | null) {
-    return value === null || value === undefined
-      ? 0
-      : roundRating(Number(value));
   }
 }

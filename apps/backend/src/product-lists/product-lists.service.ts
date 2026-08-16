@@ -1,4 +1,8 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { In, Repository } from 'typeorm';
 import { Product } from '../products/entities/product.entity';
@@ -7,6 +11,7 @@ import { CreateProductListDto } from './dto/create-product-list.dto';
 import { ProductListProductsDto } from './dto/product-list-products.dto';
 import { UpdateProductListDto } from './dto/update-product-list.dto';
 import { ProductList } from './entities/product-list.entity';
+import { ProductRatingAggregationService } from '../product-feedback/product-rating-aggregation.service';
 
 @Injectable()
 export class ProductListsService {
@@ -17,6 +22,7 @@ export class ProductListsService {
     private subgroupRepository: Repository<SubGroup>,
     @InjectRepository(Product)
     private productRepository: Repository<Product>,
+    private readonly ratingAggregation: ProductRatingAggregationService,
   ) {}
 
   async create(subgroupId: number, createProductListDto: CreateProductListDto) {
@@ -38,6 +44,9 @@ export class ProductListsService {
       relations: ['subgroup', 'products', 'products.images', 'products.brand'],
     });
     if (!productList) throw new NotFoundException('ProductList not found');
+    productList.products = await this.ratingAggregation.attachToProducts(
+      productList.products ?? [],
+    );
     return productList;
   }
 
@@ -55,7 +64,9 @@ export class ProductListsService {
       (a, b) => b.uid - a.uid,
     );
     const total = products.length;
-    const data = products.slice(skip, skip + take);
+    const data = await this.ratingAggregation.attachToProducts(
+      products.slice(skip, skip + take),
+    );
 
     return {
       data,
@@ -68,7 +79,9 @@ export class ProductListsService {
   }
 
   async update(id: number, updateProductListDto: UpdateProductListDto) {
-    const productList = await this.productListRepository.findOne({ where: { id } });
+    const productList = await this.productListRepository.findOne({
+      where: { id },
+    });
     if (!productList) throw new NotFoundException('ProductList not found');
     Object.assign(productList, updateProductListDto);
     return this.productListRepository.save(productList);
@@ -87,7 +100,9 @@ export class ProductListsService {
     });
     this.throwIfMissingProducts(eans, products);
 
-    const existingUids = new Set((productList.products ?? []).map((product) => product.uid));
+    const existingUids = new Set(
+      (productList.products ?? []).map((product) => product.uid),
+    );
     productList.products = [
       ...(productList.products ?? []),
       ...products.filter((product) => !existingUids.has(product.uid)),
@@ -128,7 +143,9 @@ export class ProductListsService {
     const found = new Set(products.map((product) => product.ean));
     const missing = eans.filter((ean) => !found.has(ean));
     if (missing.length) {
-      throw new NotFoundException(`Products not found for EANs: ${missing.join(', ')}`);
+      throw new NotFoundException(
+        `Products not found for EANs: ${missing.join(', ')}`,
+      );
     }
   }
 }

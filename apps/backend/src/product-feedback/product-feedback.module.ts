@@ -7,11 +7,12 @@ import {
   ProductFeedbackController,
 } from './product-feedback.controller';
 import { ProductFeedbackService } from './product-feedback.service';
+import { ProductRatingAggregationService } from './product-rating-aggregation.service';
 
 @Module({
   imports: [TypeOrmModule.forFeature([ProductFeedback, Product])],
   controllers: [ProductFeedbackController, AdminProductFeedbackController],
-  providers: [ProductFeedbackService],
-  exports: [ProductFeedbackService],
+  providers: [ProductFeedbackService, ProductRatingAggregationService],
+  exports: [ProductFeedbackService, ProductRatingAggregationService],
 })
 export class ProductFeedbackModule {}

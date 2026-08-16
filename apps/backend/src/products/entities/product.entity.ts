@@ -91,4 +91,22 @@ export class Product {
 
   @ApiProperty({ example: 132 })
   ratingsCount: number;
+
+  @ApiProperty({
+    example: 4.6,
+    description: 'Average effectiveness rating, rounded to one decimal',
+  })
+  effectivenessAverage: number;
+
+  @ApiProperty({
+    example: 4.4,
+    description: 'Average needs rating, rounded to one decimal',
+  })
+  needsAverage: number;
+
+  @ApiProperty({
+    example: 4.5,
+    description: 'Average repurchase rating, rounded to one decimal',
+  })
+  repurchaseAverage: number;
 }

@@ -3,7 +3,7 @@ import { Brand } from '../brands/entities/brand.entity';
 import { Category } from '../categories/entities/category.entity';
 import { Flag } from '../flags/entities/flag.entity';
 import { Ingredient } from '../ingredients/entities/ingredient.entity';
-import { ProductFeedback } from '../product-feedback/entities/product-feedback.entity';
+import { ProductRatingAggregationService } from '../product-feedback/product-rating-aggregation.service';
 import { FirebaseStorageService } from '../storage/firebase-storage.service';
 import { SubCategory } from '../subcategories/entities/subcategory.entity';
 import { SubSubCategory } from '../subsubcategories/entities/subsubcategory.entity';
@@ -27,30 +27,27 @@ describe('ProductsService rating integration', () => {
     flagQueryBuilder.offset = jest.fn().mockReturnValue(flagQueryBuilder);
     flagQueryBuilder.limit = jest.fn().mockReturnValue(flagQueryBuilder);
     flagQueryBuilder.getRawMany = jest.fn().mockResolvedValue([]);
-    const feedbackQueryBuilder: Record<string, jest.Mock> = {};
-    feedbackQueryBuilder.select = jest
-      .fn()
-      .mockReturnValue(feedbackQueryBuilder);
-    feedbackQueryBuilder.addSelect = jest
-      .fn()
-      .mockReturnValue(feedbackQueryBuilder);
-    feedbackQueryBuilder.where = jest
-      .fn()
-      .mockReturnValue(feedbackQueryBuilder);
-    feedbackQueryBuilder.groupBy = jest
-      .fn()
-      .mockReturnValue(feedbackQueryBuilder);
-    feedbackQueryBuilder.getRawMany = jest.fn().mockResolvedValue([]);
-
     const productsRepository = {
       createQueryBuilder: jest
         .fn()
         .mockReturnValueOnce(productQueryBuilder)
         .mockReturnValueOnce(flagQueryBuilder),
     } as unknown as Repository<Product>;
-    const feedbackRepository = {
-      createQueryBuilder: jest.fn().mockReturnValue(feedbackQueryBuilder),
-    } as unknown as Repository<ProductFeedback>;
+    const ratingAggregation = {
+      attachToProducts: jest.fn((products: Product[]) =>
+        Promise.resolve(
+          products.map((item) =>
+            Object.assign(item, {
+              averageRating: 0,
+              ratingsCount: 0,
+              effectivenessAverage: 0,
+              needsAverage: 0,
+              repurchaseAverage: 0,
+            }),
+          ),
+        ),
+      ),
+    } as unknown as ProductRatingAggregationService;
     const emptyRepository = {} as Repository<never>;
     const flagsRepository = {
       exist: jest.fn().mockResolvedValue(true),
@@ -64,7 +61,7 @@ describe('ProductsService rating integration', () => {
       emptyRepository as Repository<Ingredient>,
       flagsRepository,
       emptyRepository as Repository<ProductImage>,
-      feedbackRepository,
+      ratingAggregation,
       {} as FirebaseStorageService,
     );
 
@@ -72,6 +69,9 @@ describe('ProductsService rating integration', () => {
       uid: 123,
       averageRating: 0,
       ratingsCount: 0,
+      effectivenessAverage: 0,
+      needsAverage: 0,
+      repurchaseAverage: 0,
     });
     await expect(service.findByFlag(1, 1, 10)).resolves.toEqual({
       data: [],

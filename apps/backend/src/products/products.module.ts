@@ -10,7 +10,7 @@ import { Ingredient } from '../ingredients/entities/ingredient.entity';
 import { Flag } from '../flags/entities/flag.entity';
 import { SubCategory } from '../subcategories/entities/subcategory.entity';
 import { Category } from '../categories/entities/category.entity';
-import { ProductFeedback } from '../product-feedback/entities/product-feedback.entity';
+import { ProductFeedbackModule } from '../product-feedback/product-feedback.module';
 
 @Module({
   imports: [
@@ -23,8 +23,8 @@ import { ProductFeedback } from '../product-feedback/entities/product-feedback.e
       Category,
       SubCategory,
       SubSubCategory,
-      ProductFeedback,
     ]),
+    ProductFeedbackModule,
   ],
   controllers: [ProductsController],
   providers: [ProductsService],

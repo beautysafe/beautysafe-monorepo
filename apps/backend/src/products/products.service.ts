@@ -13,7 +13,8 @@ import { Category } from '../categories/entities/category.entity';
 import { SubCategory } from '../subcategories/entities/subcategory.entity';
 import { SearchProductsDto } from './dto/search-products.dto';
 import { FirebaseStorageService } from '../storage/firebase-storage.service';
-import { ProductFeedback } from '../product-feedback/entities/product-feedback.entity';
+import { ProductRatingAggregationService } from '../product-feedback/product-rating-aggregation.service';
+import { ProductRatingSummaryDto } from '../product-feedback/dto/product-feedback-page.dto';
 
 @Injectable()
 export class ProductsService {
@@ -36,8 +37,7 @@ export class ProductsService {
     private flagsRepository: Repository<Flag>,
     @InjectRepository(ProductImage)
     private productImagesRepository: Repository<ProductImage>,
-    @InjectRepository(ProductFeedback)
-    private feedbackRepository: Repository<ProductFeedback>,
+    private readonly ratingAggregation: ProductRatingAggregationService,
     private readonly storage: FirebaseStorageService,
   ) {}
 
@@ -721,44 +721,7 @@ export class ProductsService {
 
   private async attachRatingSummaries<T extends { uid: number }>(
     products: T[],
-  ): Promise<Array<T & { averageRating: number; ratingsCount: number }>> {
-    if (!products.length) return [];
-
-    const productIds = [...new Set(products.map((product) => product.uid))];
-    const rows = await this.feedbackRepository
-      .createQueryBuilder('feedback')
-      .select('feedback.productId', 'productId')
-      .addSelect('COUNT(feedback.id)', 'ratingsCount')
-      .addSelect(
-        'AVG((feedback.effectivenessRating + feedback.needsRating + feedback.repurchaseRating) / 3.0)',
-        'averageRating',
-      )
-      .where('feedback.productId IN (:...productIds)', { productIds })
-      .groupBy('feedback.productId')
-      .getRawMany<{
-        productId: string;
-        ratingsCount: string;
-        averageRating: string;
-      }>();
-
-    const summaries = new Map(
-      rows.map((row) => [
-        Number(row.productId),
-        {
-          ratingsCount: Number(row.ratingsCount),
-          averageRating: Math.round(Number(row.averageRating) * 10) / 10,
-        },
-      ]),
-    );
-
-    return products.map((product) =>
-      Object.assign(
-        product,
-        summaries.get(product.uid) ?? {
-          averageRating: 0,
-          ratingsCount: 0,
-        },
-      ),
-    );
+  ): Promise<Array<T & ProductRatingSummaryDto>> {
+    return this.ratingAggregation.attachToProducts(products);
   }
 }

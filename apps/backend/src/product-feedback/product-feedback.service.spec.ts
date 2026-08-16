@@ -2,6 +2,7 @@ import { Repository } from 'typeorm';
 import { Product } from '../products/entities/product.entity';
 import { ProductFeedback } from './entities/product-feedback.entity';
 import { ProductFeedbackService } from './product-feedback.service';
+import { ProductRatingAggregationService } from './product-rating-aggregation.service';
 
 describe('ProductFeedbackService', () => {
   it('upserts the same user/product row instead of creating duplicates', async () => {
@@ -28,6 +29,7 @@ describe('ProductFeedbackService', () => {
     const service = new ProductFeedbackService(
       feedbackRepository,
       productsRepository,
+      {} as ProductRatingAggregationService,
     );
 
     const first = await service.upsert(7, 123, {
@@ -67,6 +69,7 @@ describe('ProductFeedbackService', () => {
     const service = new ProductFeedbackService(
       feedbackRepository,
       {} as Repository<Product>,
+      {} as ProductRatingAggregationService,
     );
 
     await expect(
@@ -78,5 +81,30 @@ describe('ProductFeedbackService', () => {
       limit: 20,
       totalPages: 0,
     });
+  });
+
+  it('returns the shared five-field rating summary', async () => {
+    const expected = {
+      averageRating: 4,
+      ratingsCount: 2,
+      effectivenessAverage: 4,
+      needsAverage: 4.5,
+      repurchaseAverage: 3.5,
+    };
+    const productsRepository = {
+      exist: jest.fn().mockResolvedValue(true),
+    } as unknown as Repository<Product>;
+    const getForProduct = jest.fn().mockResolvedValue(expected);
+    const ratingAggregation = {
+      getForProduct,
+    } as unknown as ProductRatingAggregationService;
+    const service = new ProductFeedbackService(
+      {} as Repository<ProductFeedback>,
+      productsRepository,
+      ratingAggregation,
+    );
+
+    await expect(service.getSummary(123)).resolves.toEqual(expected);
+    expect(getForProduct).toHaveBeenCalledWith(123);
   });
 });
