@@ -52,4 +52,31 @@ describe('ProductFeedbackService', () => {
       expect.objectContaining({ conflictPaths: ['userId', 'productId'] }),
     );
   });
+
+  it('returns an empty admin page when no feedback exists', async () => {
+    const queryBuilder: Record<string, jest.Mock> = {};
+    queryBuilder.leftJoin = jest.fn().mockReturnValue(queryBuilder);
+    queryBuilder.addSelect = jest.fn().mockReturnValue(queryBuilder);
+    queryBuilder.orderBy = jest.fn().mockReturnValue(queryBuilder);
+    queryBuilder.skip = jest.fn().mockReturnValue(queryBuilder);
+    queryBuilder.take = jest.fn().mockReturnValue(queryBuilder);
+    queryBuilder.getManyAndCount = jest.fn().mockResolvedValue([[], 0]);
+    const feedbackRepository = {
+      createQueryBuilder: jest.fn().mockReturnValue(queryBuilder),
+    } as unknown as Repository<ProductFeedback>;
+    const service = new ProductFeedbackService(
+      feedbackRepository,
+      {} as Repository<Product>,
+    );
+
+    await expect(
+      service.findAllForAdmin({ page: 1, limit: 20, sort: 'newest' as never }),
+    ).resolves.toEqual({
+      items: [],
+      total: 0,
+      page: 1,
+      limit: 20,
+      totalPages: 0,
+    });
+  });
 });

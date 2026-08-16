@@ -19,7 +19,7 @@ import { SubgroupsModule } from './subgroups/subgroups.module';
 import { ProductListsModule } from './product-lists/product-lists.module';
 import { JourneysModule } from './journeys/journeys.module';
 
-import { APP_GUARD } from '@nestjs/core';
+import { APP_FILTER, APP_GUARD } from '@nestjs/core';
 import { RolesGuard } from './common/guards/roles.guard';
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
 import { StorageModule } from './storage/storage.module';
@@ -27,6 +27,7 @@ import { UnavailableProductsModule } from './unavailable-products/unavailable-pr
 import { ProductFeedbackModule } from './product-feedback/product-feedback.module';
 import { ScansModule } from './scans/scans.module';
 import { join } from 'path';
+import { QueryFailedErrorFilter } from './common/filters/query-failed-error.filter';
 
 @Module({
   imports: [
@@ -39,7 +40,9 @@ import { join } from 'path';
       password: process.env.DB_PASS,
       database: process.env.DB_NAME,
       autoLoadEntities: true,
-      synchronize: process.env.DB_SYNCHRONIZE === 'true',
+      synchronize:
+        process.env.NODE_ENV !== 'production' &&
+        process.env.DB_SYNCHRONIZE === 'true',
       migrations: [join(__dirname, 'database', 'migrations', '*.{js,ts}')],
       migrationsRun: process.env.DB_MIGRATIONS_RUN === 'true',
     }),
@@ -73,6 +76,10 @@ import { join } from 'path';
     {
       provide: APP_GUARD,
       useClass: RolesGuard,
+    },
+    {
+      provide: APP_FILTER,
+      useClass: QueryFailedErrorFilter,
     },
   ],
 })

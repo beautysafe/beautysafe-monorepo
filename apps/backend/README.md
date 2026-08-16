@@ -154,3 +154,20 @@ pnpm migration:revert
 `DB_SYNCHRONIZE=true` remains an explicit local-development opt-in only. Keep it
 disabled in production and run migrations before deploying application code that
 uses a new schema.
+
+The production start script now runs committed, compiled migrations before Nest
+starts accepting traffic:
+
+```bash
+pnpm --filter backend start:prod
+```
+
+Render should use that exact start command after a build containing
+`apps/backend/dist/database/migrations/*.js`. If a migration fails, application
+startup stops instead of serving code against an incompatible schema. To inspect
+or apply the compiled migration set manually after building, run:
+
+```bash
+pnpm --filter backend migration:show:prod
+pnpm --filter backend migration:run:prod
+```

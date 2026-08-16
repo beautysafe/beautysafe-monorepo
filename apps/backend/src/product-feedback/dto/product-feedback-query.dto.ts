@@ -1,5 +1,5 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { Transform } from 'class-transformer';
+import { Type } from 'class-transformer';
 import { IsInt, IsOptional, IsString, MaxLength, Min } from 'class-validator';
 import { PaginationQueryDto } from '../../common/dto/pagination-query.dto';
 
@@ -23,7 +23,7 @@ export class AdminProductFeedbackQueryDto extends PaginationQueryDto {
     description: 'Filter by exact product UID',
   })
   @IsOptional()
-  @Transform(({ value }) => Number(value))
+  @Type(() => Number)
   @IsInt()
   @Min(1)
   productId?: number;

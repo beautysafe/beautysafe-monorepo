@@ -56,10 +56,38 @@ describe('ScansService', () => {
     const productsRepository = {} as Repository<Product>;
     const service = new ScansService(scansRepository, productsRepository);
 
-    await service.findMine(77, { page: 1, limit: 20 });
+    const result = await service.findMine(77, { page: 1, limit: 20 });
 
     expect(findAndCountMock).toHaveBeenCalledWith(
       expect.objectContaining({ where: { userId: 77 } }),
     );
+    expect(result).toEqual({
+      items: [],
+      page: 1,
+      limit: 20,
+      total: 0,
+      totalPages: 0,
+      totalScans: 0,
+    });
+  });
+
+  it('returns zero totals when the authenticated user has no scans', async () => {
+    const queryBuilder: Record<string, jest.Mock> = {};
+    queryBuilder.select = jest.fn().mockReturnValue(queryBuilder);
+    queryBuilder.addSelect = jest.fn().mockReturnValue(queryBuilder);
+    queryBuilder.where = jest.fn().mockReturnValue(queryBuilder);
+    queryBuilder.getRawOne = jest.fn().mockResolvedValue(undefined);
+    const scansRepository = {
+      createQueryBuilder: jest.fn().mockReturnValue(queryBuilder),
+    } as unknown as Repository<ProductScan>;
+    const service = new ScansService(
+      scansRepository,
+      {} as Repository<Product>,
+    );
+
+    await expect(service.getMyStats(77)).resolves.toEqual({
+      totalScans: 0,
+      uniqueProducts: 0,
+    });
   });
 });
