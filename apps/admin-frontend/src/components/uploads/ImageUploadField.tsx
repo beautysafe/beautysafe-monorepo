@@ -1,5 +1,19 @@
-import { DeleteOutlined, ReloadOutlined, UploadOutlined } from '@ant-design/icons';
-import { Alert, Button, Image, Progress, Space, Typography } from 'antd';
+import {
+  DeleteOutlined,
+  LinkOutlined,
+  ReloadOutlined,
+  UploadOutlined,
+} from '@ant-design/icons';
+import {
+  Alert,
+  Button,
+  Divider,
+  Image,
+  Input,
+  Progress,
+  Space,
+  Typography,
+} from 'antd';
 import { useEffect, useId, useRef, useState } from 'react';
 import {
   deleteUploadedFile,
@@ -52,6 +66,7 @@ export function ImageUploadField({
   const [error, setError] = useState<string>();
   const [failedFile, setFailedFile] = useState<File>();
   const [dragging, setDragging] = useState(false);
+  const [directUrl, setDirectUrl] = useState('');
 
   valueRef.current = value;
   committedRef.current = committed;
@@ -102,6 +117,36 @@ export function ImageUploadField({
       await deleteUploadedFile(value.storagePath).catch(() => undefined);
     }
     onChange(null);
+    setError(undefined);
+    setFailedFile(undefined);
+  };
+
+  const addDirectUrl = async () => {
+    const candidate = directUrl.trim();
+    if (!candidate) {
+      setError("L'URL de l'image est requise.");
+      return;
+    }
+
+    try {
+      const parsed = new URL(candidate);
+      if (!['http:', 'https:'].includes(parsed.protocol)) throw new Error();
+    } catch {
+      setError("L'URL de l'image doit être une URL HTTP(S) valide.");
+      return;
+    }
+
+    if (valueRef.current?.url === candidate) {
+      setError('Cette URL est déjà utilisée.');
+      return;
+    }
+
+    const previous = valueRef.current;
+    if (previous?.isNew && previous.storagePath) {
+      await deleteUploadedFile(previous.storagePath).catch(() => undefined);
+    }
+    onChange({ url: candidate });
+    setDirectUrl('');
     setError(undefined);
     setFailedFile(undefined);
   };
@@ -186,6 +231,25 @@ export function ImageUploadField({
           Déposez une image ici ou utilisez le bouton. Maximum 10 Mo.
         </Typography.Paragraph>
         {uploading && <Progress percent={progress} status="active" aria-label="Progression de l'envoi" />}
+
+        <Divider plain>OU</Divider>
+        <Typography.Text strong>Ajouter une image par URL</Typography.Text>
+        <Space.Compact style={{ width: '100%', marginTop: 8 }}>
+          <Input
+            value={directUrl}
+            placeholder="https://example.com/images/image.jpg"
+            disabled={disabled || uploading}
+            onChange={(event) => setDirectUrl(event.target.value)}
+            onPressEnter={() => void addDirectUrl()}
+          />
+          <Button
+            icon={<LinkOutlined />}
+            disabled={disabled || uploading}
+            onClick={() => void addDirectUrl()}
+          >
+            Ajouter l'image
+          </Button>
+        </Space.Compact>
       </div>
       {error && <Alert type="error" showIcon message={error} style={{ marginTop: 8 }} />}
     </div>

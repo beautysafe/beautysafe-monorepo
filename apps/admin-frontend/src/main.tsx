@@ -33,6 +33,8 @@ import ProductListProductsPage from "./pages/dashboard/groups/manage-product-lis
 import SelectGroupProductsPage from "./pages/dashboard/groups/select-group-products";
 import JourneysPage from "./pages/dashboard/groups/list-journeys";
 import JourneyManagePage from "./pages/dashboard/groups/manage-journey";
+import UnavailableProductsPage from "./pages/dashboard/unavailable-products/list-unavailable-products";
+import FeedbackPage from "./pages/dashboard/feedback/list-feedback";
 const queryClient = new QueryClient();
 
 const isTokenValid = (token: string | null): boolean => {
@@ -94,6 +96,11 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
               <Route path="banners/:id/edit" element={<EditBannerPage />} />
               <Route path="banners/:id" element={<DetailBanner />} />
               <Route path="stories" element={<StoriesList />} />
+              <Route
+                path="unavailable-products"
+                element={<UnavailableProductsPage />}
+              />
+              <Route path="feedback" element={<FeedbackPage />} />
               <Route path="groups" element={<GroupsList />} />
               <Route
                 path="groups/:groupId/subgroups"

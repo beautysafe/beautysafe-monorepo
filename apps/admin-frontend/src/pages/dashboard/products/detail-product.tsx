@@ -8,7 +8,7 @@ import {
 } from "../../../hooks/useProduct";
 import EditProductForm from "./edit-product";
 import { useQueryClient } from "@tanstack/react-query";
-import type { Ingredient } from "../../../lib/entities";
+import type { Ingredient, Product } from "../../../lib/entities";
 
 const ProductDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -43,7 +43,7 @@ const ProductDetail: React.FC = () => {
     });
   };
 
-  const handleUpdate = async (values: any) => {
+  const handleUpdate = async (values: Partial<Product>) => {
     if (!id) {
       message.error("Product ID is missing");
       return;
@@ -84,13 +84,19 @@ const ProductDetail: React.FC = () => {
             <Descriptions.Item label="EAN">{product.ean}</Descriptions.Item>
             <Descriptions.Item label="Marque">{product.brand?.name}</Descriptions.Item>
             <Descriptions.Item label="Score">{product.validScore}</Descriptions.Item>
+            <Descriptions.Item label="Average rating">
+              {(product.averageRating ?? 0).toFixed(1)} / 5
+            </Descriptions.Item>
+            <Descriptions.Item label="Ratings">
+              {product.ratingsCount ?? 0}
+            </Descriptions.Item>
             <Descriptions.Item label="Type">{product.type}</Descriptions.Item>
             <Descriptions.Item label="Catégorie">{product.category?.name ?? "—"}</Descriptions.Item>
             <Descriptions.Item label="Sous-catégorie">{product.subCategory?.name ?? "—"}</Descriptions.Item>
             <Descriptions.Item label="Sous-sous-catégorie">{product.subSubCategory?.name ?? "—"}</Descriptions.Item>
             <Descriptions.Item label="Flags">
               {(product.flags && product.flags.length > 0)
-                ? product.flags.map((f: { name: any; }) => f.name).join(', ')
+                ? product.flags.map((flag) => flag.name).join(', ')
                 : "—"}
             </Descriptions.Item>
             <Descriptions.Item label="Ingrédients">
@@ -114,7 +120,7 @@ const ProductDetail: React.FC = () => {
         <div>
           {Array.isArray(product.images) && product.images.length > 0 && (
             <div style={{ marginTop: 16, display: 'flex', flexDirection: 'column', gap: 12 }}>
-              {product.images.map((img: { image: string | undefined; id: React.Key | null | undefined; thumbnail: any; }) => (
+              {product.images.map((img) => (
                 <a
                   href={img.image}
                   key={img.id}

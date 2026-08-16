@@ -113,6 +113,8 @@ export interface Product {
   brandId?: number;
   compositionIds?: number[];
   flagIds?: number[];
+  averageRating?: number;
+  ratingsCount?: number;
 }
 export type ProductsByFlagResponse = {
   data: Product[];
@@ -186,3 +188,55 @@ export type PaginatedProductsResponse = {
   total: number;
   pageCount: number;
 };
+
+export type UnavailableProductStatus =
+  | "PENDING"
+  | "REVIEWING"
+  | "ADDED"
+  | "REJECTED";
+
+export interface AdminUserSummary {
+  id: number;
+  email?: string;
+  fullName?: string | null;
+}
+
+export interface UnavailableProduct {
+  id: number;
+  ean: string | null;
+  userId: number | null;
+  productName: string | null;
+  brandName: string | null;
+  notes: string | null;
+  imageUrls: string[];
+  status: UnavailableProductStatus;
+  createdAt: string;
+  updatedAt: string;
+  resolvedAt: string | null;
+  resolvedProductId: number | null;
+  user?: AdminUserSummary | null;
+  resolvedProduct?: Pick<Product, "uid" | "name" | "ean"> | null;
+}
+
+export interface ProductFeedback {
+  id: number;
+  productId: number;
+  userId: number;
+  effectivenessRating: number;
+  needsRating: number;
+  repurchaseRating: number;
+  averageRating: number;
+  comment: string | null;
+  createdAt: string;
+  updatedAt: string;
+  user?: AdminUserSummary;
+  product?: Pick<Product, "uid" | "name" | "ean">;
+}
+
+export interface PaginatedResponse<T> {
+  items: T[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+}

@@ -4,8 +4,19 @@ import {
   DeleteOutlined,
   ReloadOutlined,
   UploadOutlined,
+  LinkOutlined,
 } from '@ant-design/icons';
-import { Alert, Button, Card, Image, Progress, Space, Typography } from 'antd';
+import {
+  Alert,
+  Button,
+  Card,
+  Divider,
+  Image,
+  Input,
+  Progress,
+  Space,
+  Typography,
+} from 'antd';
 import { useEffect, useId, useRef, useState } from 'react';
 import {
   deleteUploadedFile,
@@ -55,6 +66,7 @@ export function MultipleProductImageUpload({
   const [error, setError] = useState<string>();
   const [failedFiles, setFailedFiles] = useState<File[]>([]);
   const [dragging, setDragging] = useState(false);
+  const [directUrl, setDirectUrl] = useState('');
   valueRef.current = value;
   committedRef.current = committed;
 
@@ -141,6 +153,35 @@ export function MultipleProductImageUpload({
     onChange(next);
   };
 
+  const addDirectUrl = () => {
+    const candidate = directUrl.trim();
+    if (!candidate) {
+      setError("L'URL de l'image est requise.");
+      return;
+    }
+
+    try {
+      const parsed = new URL(candidate);
+      if (!['http:', 'https:'].includes(parsed.protocol)) throw new Error();
+    } catch {
+      setError("L'URL de l'image doit être une URL HTTP(S) valide.");
+      return;
+    }
+
+    if (valueRef.current.some((image) => image.imageUrl === candidate)) {
+      setError('Cette URL est déjà dans la liste.');
+      return;
+    }
+
+    onChange([
+      ...valueRef.current,
+      { imageUrl: candidate, thumbnailUrl: candidate },
+    ]);
+    setDirectUrl('');
+    setError(undefined);
+    setFailedFiles([]);
+  };
+
   return (
     <div>
       <Typography.Text strong>{label}</Typography.Text>
@@ -188,6 +229,25 @@ export function MultipleProductImageUpload({
           La première image est l'image principale. Les miniatures sont générées automatiquement.
         </Typography.Paragraph>
         {uploading && <Progress percent={progress} status="active" />}
+
+        <Divider plain>OU</Divider>
+        <Typography.Text strong>Ajouter une image par URL</Typography.Text>
+        <Space.Compact style={{ width: '100%', marginTop: 8 }}>
+          <Input
+            value={directUrl}
+            placeholder="https://example.com/images/product.jpg"
+            disabled={disabled || uploading}
+            onChange={(event) => setDirectUrl(event.target.value)}
+            onPressEnter={addDirectUrl}
+          />
+          <Button
+            icon={<LinkOutlined />}
+            disabled={disabled || uploading}
+            onClick={addDirectUrl}
+          >
+            Ajouter l'image
+          </Button>
+        </Space.Compact>
       </div>
 
       <Space direction="vertical" style={{ width: '100%', marginTop: 12 }}>
