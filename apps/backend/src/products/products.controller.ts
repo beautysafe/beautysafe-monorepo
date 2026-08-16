@@ -12,9 +12,10 @@ import { ProductsService } from './products.service';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
 import {
-  ApiBasicAuth,
   ApiBearerAuth,
   ApiOperation,
+  ApiOkResponse,
+  ApiNotFoundResponse,
   ApiTags,
 } from '@nestjs/swagger';
 import { Public } from '../common/decorators/public.decorator';
@@ -22,6 +23,7 @@ import { Roles } from '../common/decorators/roles.decorator';
 import { Query } from '@nestjs/common';
 import { ApiQuery } from '@nestjs/swagger';
 import { SearchProductsDto } from './dto/search-products.dto';
+import { Product } from './entities/product.entity';
 
 @ApiBearerAuth()
 @ApiTags('Products')
@@ -57,6 +59,8 @@ export class ProductsController {
   }
   @Public()
   @ApiOperation({ summary: 'Find by ean' })
+  @ApiOkResponse({ type: Product })
+  @ApiNotFoundResponse({ description: 'Product not found' })
   @Get('ean/:ean')
   getByEan(@Param('ean') ean: string) {
     return this.productsService.findByEan(ean);
@@ -130,6 +134,8 @@ export class ProductsController {
 
   @Roles('admin')
   @Get(':uid')
+  @ApiOkResponse({ type: Product })
+  @ApiNotFoundResponse({ description: 'Product not found' })
   findOne(@Param('uid', ParseIntPipe) uid: number) {
     return this.productsService.findOne(uid);
   }

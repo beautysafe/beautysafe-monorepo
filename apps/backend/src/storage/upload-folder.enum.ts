@@ -6,4 +6,5 @@ export enum UploadFolder {
   GROUPS = 'groups',
   SUBGROUPS = 'subgroups',
   AVATARS = 'avatars',
+  UNAVAILABLE_PRODUCTS = 'unavailable-products',
 }

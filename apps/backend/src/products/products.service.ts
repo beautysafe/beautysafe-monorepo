@@ -13,6 +13,7 @@ import { Category } from '../categories/entities/category.entity';
 import { SubCategory } from '../subcategories/entities/subcategory.entity';
 import { SearchProductsDto } from './dto/search-products.dto';
 import { FirebaseStorageService } from '../storage/firebase-storage.service';
+import { ProductFeedback } from '../product-feedback/entities/product-feedback.entity';
 
 @Injectable()
 export class ProductsService {
@@ -35,6 +36,8 @@ export class ProductsService {
     private flagsRepository: Repository<Flag>,
     @InjectRepository(ProductImage)
     private productImagesRepository: Repository<ProductImage>,
+    @InjectRepository(ProductFeedback)
+    private feedbackRepository: Repository<ProductFeedback>,
     private readonly storage: FirebaseStorageService,
   ) {}
 
@@ -322,7 +325,7 @@ export class ProductsService {
       .getOne();
 
     if (!product) throw new NotFoundException('Product not found');
-    return product;
+    return (await this.attachRatingSummaries([product]))[0];
   }
 
   // Get All Products
@@ -351,8 +354,10 @@ export class ProductsService {
 
     const hasMore = items.length > take;
 
+    const data = hasMore ? items.slice(0, take) : items;
+
     return {
-      data: hasMore ? items.slice(0, take) : items,
+      data: await this.attachRatingSummaries(data),
       page,
       limit: take,
       hasMore,
@@ -374,7 +379,7 @@ export class ProductsService {
       ],
     });
     if (!product) throw new NotFoundException('Product not found');
-    return product;
+    return (await this.attachRatingSummaries([product]))[0];
   }
 
   // Ge Product by Category
@@ -393,7 +398,7 @@ export class ProductsService {
         .getMany(),
     ]);
     return {
-      data,
+      data: await this.attachRatingSummaries(data),
       total: category?.totalProducts ?? 0,
 
       page,
@@ -401,16 +406,18 @@ export class ProductsService {
     };
   }
 
-  findBySubSubCategory(subSubCategoryId: number) {
-    return this.productsRepository.find({
+  async findBySubSubCategory(subSubCategoryId: number) {
+    const products = await this.productsRepository.find({
       where: { subSubCategory: { id: subSubCategoryId } },
     });
+    return this.attachRatingSummaries(products);
   }
 
-  findBySubCategory(subCategoryId: number) {
-    return this.productsRepository.find({
+  async findBySubCategory(subCategoryId: number) {
+    const products = await this.productsRepository.find({
       where: { subCategory: { id: subCategoryId } },
     });
+    return this.attachRatingSummaries(products);
   }
 
   // Ge Product by Flage
@@ -430,7 +437,7 @@ export class ProductsService {
       .orderBy('product.uid', 'DESC')
       .offset(skip)
       .limit(take)
-      .getRawMany();
+      .getRawMany<{ uid: number }>();
 
     const uids = rows.map((r) => r.uid);
 
@@ -446,7 +453,7 @@ export class ProductsService {
       : [];
 
     return {
-      data,
+      data: await this.attachRatingSummaries(data),
       page,
       limit: take,
       hasMore: data.length === take, // optional
@@ -473,7 +480,7 @@ export class ProductsService {
       .getMany();
 
     return {
-      data,
+      data: await this.attachRatingSummaries(data),
       page,
     };
   }
@@ -513,7 +520,7 @@ export class ProductsService {
     }));
 
     return {
-      data,
+      data: await this.attachRatingSummaries(data),
       total,
       page,
       pageCount: Math.ceil(total / limit),
@@ -680,13 +687,13 @@ export class ProductsService {
       .orderBy()
       .select('COUNT(DISTINCT product.uid)', 'cnt');
 
-    const [{ cnt }] = await countQb.getRawMany();
+    const [{ cnt = '0' } = {}] = await countQb.getRawMany<{ cnt: string }>();
     const total = parseInt(cnt, 10) || 0;
 
     const data = await qb.getMany();
 
     return {
-      data,
+      data: await this.attachRatingSummaries(data),
       page,
       limit: take,
       total,
@@ -709,6 +716,49 @@ export class ProductsService {
             );
           }
         }),
+    );
+  }
+
+  private async attachRatingSummaries<T extends { uid: number }>(
+    products: T[],
+  ): Promise<Array<T & { averageRating: number; ratingsCount: number }>> {
+    if (!products.length) return [];
+
+    const productIds = [...new Set(products.map((product) => product.uid))];
+    const rows = await this.feedbackRepository
+      .createQueryBuilder('feedback')
+      .select('feedback.productId', 'productId')
+      .addSelect('COUNT(feedback.id)', 'ratingsCount')
+      .addSelect(
+        'AVG((feedback.effectivenessRating + feedback.needsRating + feedback.repurchaseRating) / 3.0)',
+        'averageRating',
+      )
+      .where('feedback.productId IN (:...productIds)', { productIds })
+      .groupBy('feedback.productId')
+      .getRawMany<{
+        productId: string;
+        ratingsCount: string;
+        averageRating: string;
+      }>();
+
+    const summaries = new Map(
+      rows.map((row) => [
+        Number(row.productId),
+        {
+          ratingsCount: Number(row.ratingsCount),
+          averageRating: Math.round(Number(row.averageRating) * 10) / 10,
+        },
+      ]),
+    );
+
+    return products.map((product) =>
+      Object.assign(
+        product,
+        summaries.get(product.uid) ?? {
+          averageRating: 0,
+          ratingsCount: 0,
+        },
+      ),
     );
   }
 }

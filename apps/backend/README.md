@@ -139,3 +139,18 @@ service firebase.storage {
 Deploy these rules from the Firebase Console or the production Firebase
 configuration repository. This repository has no Firebase CLI configuration, so
 the backend setup does not deploy rules automatically.
+
+## Database migrations
+
+Schema synchronization is disabled by default. Configure the PostgreSQL `DB_*`
+variables, then inspect and apply committed migrations from `apps/backend`:
+
+```bash
+pnpm migration:show
+pnpm migration:run
+pnpm migration:revert
+```
+
+`DB_SYNCHRONIZE=true` remains an explicit local-development opt-in only. Keep it
+disabled in production and run migrations before deploying application code that
+uses a new schema.

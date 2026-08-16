@@ -10,6 +10,7 @@ import { Ingredient } from '../ingredients/entities/ingredient.entity';
 import { Flag } from '../flags/entities/flag.entity';
 import { SubCategory } from '../subcategories/entities/subcategory.entity';
 import { Category } from '../categories/entities/category.entity';
+import { ProductFeedback } from '../product-feedback/entities/product-feedback.entity';
 
 @Module({
   imports: [
@@ -22,6 +23,7 @@ import { Category } from '../categories/entities/category.entity';
       Category,
       SubCategory,
       SubSubCategory,
+      ProductFeedback,
     ]),
   ],
   controllers: [ProductsController],

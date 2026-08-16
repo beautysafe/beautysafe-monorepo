@@ -9,6 +9,7 @@ import { ProductImage } from '../products/entities/product-image.entity';
 import { Story } from '../stories/entities/story.entity';
 import { SubGroup } from '../subgroups/entities/subgroup.entity';
 import { User } from '../users/entities/user.entity';
+import { UnavailableProduct } from '../unavailable-products/entities/unavailable-product.entity';
 import sharp from 'sharp';
 import {
   buildProductStoragePaths,
@@ -191,37 +192,57 @@ export class FirebaseStorageService {
   }
 
   private async isReferenced(storagePath: string): Promise<boolean> {
-    const [banner, storyImage, storyVideo, group, subgroup, product, user] =
-      await Promise.all([
-        this.dataSource.getRepository(Banner).exist({
-          where: { imageKey: storagePath },
-        }),
-        this.dataSource.getRepository(Story).exist({
-          where: { imageKey: storagePath },
-        }),
-        this.dataSource
-          .getRepository(Story)
-          .createQueryBuilder('story')
-          .where(':storagePath = ANY(story."videoKeys")', { storagePath })
-          .getExists(),
-        this.dataSource.getRepository(Group).exist({
-          where: { imageKey: storagePath },
-        }),
-        this.dataSource.getRepository(SubGroup).exist({
-          where: { imageKey: storagePath },
-        }),
-        this.dataSource
-          .getRepository(ProductImage)
-          .createQueryBuilder('image')
-          .where('image."imageKey" = :storagePath', { storagePath })
-          .orWhere('image."thumbnailKey" = :storagePath', { storagePath })
-          .getExists(),
-        this.dataSource.getRepository(User).exist({
-          where: { avatarKey: storagePath },
-        }),
-      ]);
+    const [
+      banner,
+      storyImage,
+      storyVideo,
+      group,
+      subgroup,
+      product,
+      user,
+      unavailableProduct,
+    ] = await Promise.all([
+      this.dataSource.getRepository(Banner).exist({
+        where: { imageKey: storagePath },
+      }),
+      this.dataSource.getRepository(Story).exist({
+        where: { imageKey: storagePath },
+      }),
+      this.dataSource
+        .getRepository(Story)
+        .createQueryBuilder('story')
+        .where(':storagePath = ANY(story."videoKeys")', { storagePath })
+        .getExists(),
+      this.dataSource.getRepository(Group).exist({
+        where: { imageKey: storagePath },
+      }),
+      this.dataSource.getRepository(SubGroup).exist({
+        where: { imageKey: storagePath },
+      }),
+      this.dataSource
+        .getRepository(ProductImage)
+        .createQueryBuilder('image')
+        .where('image."imageKey" = :storagePath', { storagePath })
+        .orWhere('image."thumbnailKey" = :storagePath', { storagePath })
+        .getExists(),
+      this.dataSource.getRepository(User).exist({
+        where: { avatarKey: storagePath },
+      }),
+      this.dataSource
+        .getRepository(UnavailableProduct)
+        .createQueryBuilder('submission')
+        .where(':storagePath = ANY(submission."imageKeys")', { storagePath })
+        .getExists(),
+    ]);
     return (
-      banner || storyImage || storyVideo || group || subgroup || product || user
+      banner ||
+      storyImage ||
+      storyVideo ||
+      group ||
+      subgroup ||
+      product ||
+      user ||
+      unavailableProduct
     );
   }
 }

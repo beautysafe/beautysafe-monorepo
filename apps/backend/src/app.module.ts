@@ -1,5 +1,4 @@
 import { Module } from '@nestjs/common';
-import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule } from '@nestjs/config';
@@ -24,6 +23,10 @@ import { APP_GUARD } from '@nestjs/core';
 import { RolesGuard } from './common/guards/roles.guard';
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
 import { StorageModule } from './storage/storage.module';
+import { UnavailableProductsModule } from './unavailable-products/unavailable-products.module';
+import { ProductFeedbackModule } from './product-feedback/product-feedback.module';
+import { ScansModule } from './scans/scans.module';
+import { join } from 'path';
 
 @Module({
   imports: [
@@ -36,7 +39,9 @@ import { StorageModule } from './storage/storage.module';
       password: process.env.DB_PASS,
       database: process.env.DB_NAME,
       autoLoadEntities: true,
-      synchronize: true,
+      synchronize: process.env.DB_SYNCHRONIZE === 'true',
+      migrations: [join(__dirname, 'database', 'migrations', '*.{js,ts}')],
+      migrationsRun: process.env.DB_MIGRATIONS_RUN === 'true',
     }),
     ProductsModule,
     UsersModule,
@@ -55,6 +60,9 @@ import { StorageModule } from './storage/storage.module';
     ProductListsModule,
     JourneysModule,
     StorageModule,
+    UnavailableProductsModule,
+    ProductFeedbackModule,
+    ScansModule,
   ],
   providers: [
     AppService,
