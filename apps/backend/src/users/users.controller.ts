@@ -24,6 +24,8 @@ import { UsersService } from './users.service';
 import { memoryStorage } from 'multer';
 import { UpdateMeDto } from './dto/update-me.dto';
 import { MAX_IMAGE_SIZE } from '../storage/file-validation';
+import { UpdateUserVipDto } from "./dto/update-user-vip.dto";
+import { Roles } from '../common/decorators/roles.decorator';
 
 @ApiTags('users')
 @ApiBearerAuth()
@@ -42,7 +44,18 @@ export class UsersController {
   updateMe(@Req() req: any, @Body() dto: UpdateMeDto) {
     return this.usersService.updateMe(req.user.userId, dto);
   }
-
+  // PATCH /users/:userId/vip
+  @Patch(":id/vip")
+  @Roles('admin')
+  updateUserVip(
+    @Param("id") id: string,
+    @Body() dto: UpdateUserVipDto,
+  ) {
+    return this.usersService.updateUserVip(
+      Number(id),
+      dto.vip,
+    );
+  }
   // DELETE /users/me
   @Delete('me')
   deleteMe(@Req() req: any) {

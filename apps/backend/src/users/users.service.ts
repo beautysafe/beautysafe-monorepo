@@ -82,7 +82,25 @@ export class UsersService {
     await this.cleanup(user.avatarKey);
     return { message: 'Account deleted' };
   }
+    // ---------------- VIP Update ----------------
 
+  async updateUserVip(userId: number, vip: boolean) {
+    const user = await this.usersRepo.findOne({
+      where: { id: userId },
+    });
+
+    if (!user) {
+      throw new NotFoundException("User not found");
+    }
+
+    user.vip = vip;
+
+    const saved = await this.usersRepo.save(user);
+
+    const { password, ...safe } = saved as any;
+
+    return safe;
+  }
   // ---------------- Favorites ----------------
 
   async listFavorites(userId: number) {
