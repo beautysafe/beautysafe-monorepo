@@ -30,6 +30,17 @@ export class User {
   @Column()
   password: string;
 
+  @ApiProperty({
+    type: Boolean,
+    default: false,
+    description: 'VIP users do not see advertisements',
+  })
+  @Column({
+    type: 'boolean',
+    default: false,
+  })
+  vip: boolean;
+  
   @ApiProperty({ required: false, description: 'Full name of the user' })
   @Column({ type: 'varchar', length: 150, nullable: true })
   fullName?: string;

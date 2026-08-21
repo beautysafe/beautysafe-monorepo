@@ -5,6 +5,12 @@ export class UserMeDto {
   @ApiProperty() id: number;
   @ApiProperty() email: string;
   @ApiProperty({ enum: UserRole }) role: UserRole;
+  @ApiProperty({
+    type: Boolean,
+    default: false,
+    description: 'VIP users do not see advertisements',
+  })
+  vip: boolean;
   @ApiProperty({ required: false }) fullName?: string;
   @ApiProperty({ required: false }) birthday?: string;
   @ApiProperty({ required: false }) skinType?: string;
