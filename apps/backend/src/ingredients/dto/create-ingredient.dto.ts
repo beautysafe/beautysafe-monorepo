@@ -1,16 +1,14 @@
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import {
   IsNotEmpty,
   IsString,
   IsNumber,
-  IsArray,
-  ArrayNotEmpty,
-  IsInt,
   IsOptional,
+  IsEnum,
 } from 'class-validator';
+import { IngredientStatus } from '../entities/ingredient.entity';
 
 export class CreateIngredientDto {
-
   @ApiProperty()
   @IsString()
   @IsNotEmpty()
@@ -23,4 +21,12 @@ export class CreateIngredientDto {
   @IsNumber()
   @IsNotEmpty()
   score: number;
+
+  @ApiPropertyOptional({
+    enum: IngredientStatus,
+    default: IngredientStatus.ACTIVE,
+  })
+  @IsOptional()
+  @IsEnum(IngredientStatus)
+  status?: IngredientStatus;
 }

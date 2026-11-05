@@ -71,7 +71,19 @@ const DashboardLayout: React.FC = () => {
     {
       key: "ingredients",
       icon: <ExperimentOutlined />,
-      label: <Link to="/dashboard/ingredients">Ingrédients</Link>,
+      label: "Ingrédients",
+      children: [
+        {
+          key: "ingredients-all",
+          label: <Link to="/dashboard/ingredients">Tous les ingrédients</Link>,
+        },
+        {
+          key: "ingredients-new",
+          label: (
+            <Link to="/dashboard/ingredients/new">Nouveaux ingrédients</Link>
+          ),
+        },
+      ],
     },
     {
       key: "brands",
@@ -118,29 +130,42 @@ const DashboardLayout: React.FC = () => {
   ];
 
   const getSelectedKeys = () => {
-    if (location.pathname === "/dashboard/products/search") return ["products-search"];
-    if (location.pathname === "/dashboard/products/create") return ["products-create"];
-    if (location.pathname.startsWith("/dashboard/products/")) return ["products-list"];
-    if (location.pathname.startsWith("/dashboard/categories")) return ["categories"];
-    if (location.pathname.startsWith("/dashboard/ingredients")) return ["ingredients"];
+    if (location.pathname === "/dashboard/products/search")
+      return ["products-search"];
+    if (location.pathname === "/dashboard/products/create")
+      return ["products-create"];
+    if (location.pathname.startsWith("/dashboard/products/"))
+      return ["products-list"];
+    if (location.pathname.startsWith("/dashboard/categories"))
+      return ["categories"];
+    if (location.pathname.startsWith("/dashboard/ingredients/new"))
+      return ["ingredients-new"];
+    if (location.pathname.startsWith("/dashboard/ingredients"))
+      return ["ingredients-all"];
     if (location.pathname.startsWith("/dashboard/brands")) return ["brands"];
     if (location.pathname.startsWith("/dashboard/banners")) return ["banners"];
     if (location.pathname.startsWith("/dashboard/stories")) return ["stories"];
     if (location.pathname.startsWith("/dashboard/unavailable-products"))
       return ["unavailable-products"];
-    if (location.pathname.startsWith("/dashboard/feedback")) return ["feedback"];
+    if (location.pathname.startsWith("/dashboard/feedback"))
+      return ["feedback"];
     if (
       location.pathname.startsWith("/dashboard/groups") ||
       location.pathname.startsWith("/dashboard/subgroups") ||
       location.pathname.startsWith("/dashboard/product-lists") ||
       location.pathname.startsWith("/dashboard/journeys")
-    ) return ["groups"];
-    if (location.pathname.startsWith("/dashboard/coming-soon")) return ["announcements"];
+    )
+      return ["groups"];
+    if (location.pathname.startsWith("/dashboard/coming-soon"))
+      return ["announcements"];
     return ["products-list"];
   };
 
   const getOpenKeys = () => {
-    if (location.pathname.startsWith("/dashboard/products")) return ["products"];
+    if (location.pathname.startsWith("/dashboard/products"))
+      return ["products"];
+    if (location.pathname.startsWith("/dashboard/ingredients"))
+      return ["ingredients"];
     return [];
   };
 
@@ -226,7 +251,7 @@ const DashboardLayout: React.FC = () => {
                 className: "trigger",
                 onClick: () => setCollapsed(!collapsed),
                 style: { fontSize: 22, marginRight: 18, cursor: "pointer" },
-              }
+              },
             )}
             <h2 style={{ margin: 0, fontWeight: 600, color: "#3e416d" }}>
               Dashboard
@@ -234,9 +259,21 @@ const DashboardLayout: React.FC = () => {
           </div>
 
           <Dropdown overlay={userMenu} placement="bottomRight">
-            <div style={{ display: "flex", alignItems: "center", cursor: "pointer" }}>
-              <Avatar size={36} style={{ background: "#7c92ec" }} icon={<UserOutlined />} />
-              <span style={{ marginLeft: 10, fontWeight: 500, color: "#3e416d" }}>
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                cursor: "pointer",
+              }}
+            >
+              <Avatar
+                size={36}
+                style={{ background: "#7c92ec" }}
+                icon={<UserOutlined />}
+              />
+              <span
+                style={{ marginLeft: 10, fontWeight: 500, color: "#3e416d" }}
+              >
                 Admin
               </span>
             </div>

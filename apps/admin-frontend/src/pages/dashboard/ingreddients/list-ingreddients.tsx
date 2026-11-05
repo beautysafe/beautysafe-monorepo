@@ -1,25 +1,50 @@
 import React, { useState } from "react";
-import { Table, Button, Modal, Form, Input, message, Space, Popconfirm, InputNumber } from "antd";
-import { useIngreddients, useUpdateIngredient, useCreateIngredient, useDeleteIngredient, useSearchIngredients } from "../../../hooks/useIngredient";
+import {
+  Table,
+  Button,
+  Modal,
+  Form,
+  Input,
+  message,
+  Space,
+  Popconfirm,
+  InputNumber,
+} from "antd";
+import {
+  useIngreddients,
+  useUpdateIngredient,
+  useCreateIngredient,
+  useDeleteIngredient,
+  useSearchIngredients,
+} from "../../../hooks/useIngredient";
 import type { Ingredient } from "../../../lib/entities";
 
 const PAGE_SIZE = 20;
 
-const IngredientsList: React.FC = () => {
+const IngredientsList: React.FC<{ status?: Ingredient["status"] }> = ({
+  status = "ACTIVE",
+}) => {
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState(""); // search value
   const [editing, setEditing] = useState<Ingredient | null>(null);
   const [creating, setCreating] = useState(false);
 
-  const { data, isLoading } = useIngreddients(page, PAGE_SIZE);
-  const { data: searchResults, isLoading: isSearching } = useSearchIngredients(search);
+  const { data, isLoading } = useIngreddients(page, PAGE_SIZE, status);
+  const { data: searchResults, isLoading: isSearching } = useSearchIngredients(
+    search,
+    status,
+  );
   const updateIngredient = useUpdateIngredient();
   const createIngredient = useCreateIngredient();
   const deleteIngredient = useDeleteIngredient();
 
   const ingredients = search
-    ? (Array.isArray(searchResults) ? searchResults : [])
-    : (Array.isArray(data) ? data : []);
+    ? Array.isArray(searchResults)
+      ? searchResults
+      : []
+    : Array.isArray(data)
+      ? data
+      : [];
 
   const total = search ? ingredients.length : 12000;
 
@@ -44,6 +69,13 @@ const IngredientsList: React.FC = () => {
       key: "score",
     },
     {
+      title: "Statut",
+      dataIndex: "status",
+      key: "status",
+      render: (value: Ingredient["status"]) =>
+        value === "NEW" ? "Nouveau" : "Actif",
+    },
+    {
       title: "Actions",
       key: "actions",
       render: (_: any, record: Ingredient) => (
@@ -51,6 +83,23 @@ const IngredientsList: React.FC = () => {
           <Button type="link" onClick={() => setEditing(record)}>
             Modifier
           </Button>
+          {status === "NEW" && (
+            <Popconfirm
+              title="Confirmer cet ingrédient ?"
+              description="Il apparaîtra dans la liste normale des ingrédients."
+              onConfirm={async () => {
+                await updateIngredient.mutateAsync({
+                  id: record.id,
+                  data: { status: "ACTIVE" },
+                });
+                message.success("Ingrédient confirmé");
+              }}
+              okText="Confirmer"
+              cancelText="Annuler"
+            >
+              <Button type="link">Confirmer</Button>
+            </Popconfirm>
+          )}
           <Popconfirm
             title="Supprimer cet ingrédient ?"
             onConfirm={async () => {
@@ -95,13 +144,15 @@ const IngredientsList: React.FC = () => {
         enterButton
       />
 
-      <Button
-        type="primary"
-        onClick={() => setCreating(true)}
-        style={{ marginBottom: 16, float: 'right' }}
-      >
-        Ajouter un ingrédient
-      </Button>
+      {status === "ACTIVE" && (
+        <Button
+          type="primary"
+          onClick={() => setCreating(true)}
+          style={{ marginBottom: 16, float: "right" }}
+        >
+          Ajouter un ingrédient
+        </Button>
+      )}
 
       <Table
         columns={columns}
@@ -126,7 +177,11 @@ const IngredientsList: React.FC = () => {
         title="Modifier l’ingrédient"
         open={!!editing}
         onCancel={() => setEditing(null)}
-        onOk={() => (document.getElementById("edit-form") as any).dispatchEvent(new Event('submit', { cancelable: true, bubbles: true }))}
+        onOk={() =>
+          (document.getElementById("edit-form") as any).dispatchEvent(
+            new Event("submit", { cancelable: true, bubbles: true }),
+          )
+        }
         confirmLoading={updateIngredient.isPending}
         destroyOnClose
       >
@@ -139,11 +194,15 @@ const IngredientsList: React.FC = () => {
           <Form.Item name="name" label="Nom" rules={[{ required: true }]}>
             <Input />
           </Form.Item>
-          <Form.Item name="officialName" label="Nom officiel" rules={[{ required: true }]}>
+          <Form.Item
+            name="officialName"
+            label="Nom officiel"
+            rules={[{ required: true }]}
+          >
             <Input />
           </Form.Item>
           <Form.Item name="score" label="Score">
-            <InputNumber style={{ width: '100%' }} />
+            <InputNumber style={{ width: "100%" }} />
           </Form.Item>
         </Form>
       </Modal>
@@ -153,23 +212,27 @@ const IngredientsList: React.FC = () => {
         title="Ajouter un ingrédient"
         open={creating}
         onCancel={() => setCreating(false)}
-        onOk={() => (document.getElementById("create-form") as any).dispatchEvent(new Event('submit', { cancelable: true, bubbles: true }))}
+        onOk={() =>
+          (document.getElementById("create-form") as any).dispatchEvent(
+            new Event("submit", { cancelable: true, bubbles: true }),
+          )
+        }
         confirmLoading={createIngredient.isPending}
         destroyOnClose
       >
-        <Form
-          id="create-form"
-          layout="vertical"
-          onFinish={handleCreate}
-        >
+        <Form id="create-form" layout="vertical" onFinish={handleCreate}>
           <Form.Item name="name" label="Nom" rules={[{ required: true }]}>
             <Input />
           </Form.Item>
-          <Form.Item name="officialName" label="Nom officiel" rules={[{ required: true }]}>
+          <Form.Item
+            name="officialName"
+            label="Nom officiel"
+            rules={[{ required: true }]}
+          >
             <Input />
           </Form.Item>
           <Form.Item name="score" label="Score">
-            <InputNumber style={{ width: '100%' }} />
+            <InputNumber style={{ width: "100%" }} />
           </Form.Item>
         </Form>
       </Modal>

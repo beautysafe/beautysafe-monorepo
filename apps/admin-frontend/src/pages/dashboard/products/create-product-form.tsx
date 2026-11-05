@@ -18,6 +18,7 @@ import {
   type ProductImageUploadValue,
 } from "../../../components/uploads/MultipleProductImageUpload";
 import { deleteUploadedFile } from "../../../services/upload.service";
+import IngredientBulkInput from "../../../components/IngredientBulkInput";
 
 const flagNamesFr: Record<string, string> = {
   BEST_PRODUCT: "Meilleur produit",
@@ -47,7 +48,9 @@ const flagNamesFr: Record<string, string> = {
 const getIngredientLabel = (ingredient: any) =>
   ingredient?.name?.trim() || ingredient?.officialName || "Ingrédient";
 
-const CreateProductForm: React.FC<{ onSuccess?: () => void }> = ({ onSuccess }) => {
+const CreateProductForm: React.FC<{ onSuccess?: () => void }> = ({
+  onSuccess,
+}) => {
   const [form] = Form.useForm();
   const createProduct = useCreateProduct();
   const [images, setImages] = React.useState<ProductImageUploadValue[]>([]);
@@ -55,7 +58,8 @@ const CreateProductForm: React.FC<{ onSuccess?: () => void }> = ({ onSuccess }) 
   const [uploadsCommitted, setUploadsCommitted] = React.useState(false);
 
   const [brandSearch, setBrandSearch] = React.useState("");
-  const { data: brands = [], isLoading: brandsLoading } = useSearchBrands(brandSearch);
+  const { data: brands = [], isLoading: brandsLoading } =
+    useSearchBrands(brandSearch);
 
   const [ingredientSearch, setIngredientSearch] = React.useState("");
   const { data: searchedIngredients = [], isLoading: ingredientsLoading } =
@@ -63,9 +67,15 @@ const CreateProductForm: React.FC<{ onSuccess?: () => void }> = ({ onSuccess }) 
 
   const { data: flags = [] } = useFlags();
 
-  const [selectedIngredients, setSelectedIngredients] = React.useState<any[]>([]);
-  const [selectedSpecialFlagIds, setSelectedSpecialFlagIds] = React.useState<number[]>([]);
-  const [selectedCategoryFlagIds, setSelectedCategoryFlagIds] = React.useState<number[]>([]);
+  const [selectedIngredients, setSelectedIngredients] = React.useState<any[]>(
+    [],
+  );
+  const [selectedSpecialFlagIds, setSelectedSpecialFlagIds] = React.useState<
+    number[]
+  >([]);
+  const [selectedCategoryFlagIds, setSelectedCategoryFlagIds] = React.useState<
+    number[]
+  >([]);
 
   const specialFlagIds = [1, 2, 3];
   const hiddenRootFlagIds = [4, 13];
@@ -86,21 +96,46 @@ const CreateProductForm: React.FC<{ onSuccess?: () => void }> = ({ onSuccess }) 
     }));
 
   const categoryFlagOptions = flags
-    .filter((f: any) => !specialFlagIds.includes(f.id) && !hiddenRootFlagIds.includes(f.id))
+    .filter(
+      (f: any) =>
+        !specialFlagIds.includes(f.id) && !hiddenRootFlagIds.includes(f.id),
+    )
     .map((f: any) => ({
       label: flagNamesFr[f.name] || f.name,
       value: f.id,
     }));
 
   const handleIngredientSelectChange = (ids: number[]) => {
+    const current = [...selectedIngredients];
     const map = new Map(
-      ingredientOptions.map((option: any) => [option.value, option.ingredient])
+      ingredientOptions.map((option: any) => [option.value, option.ingredient]),
     );
 
-    const next = ids.map((id) => map.get(id)).filter(Boolean);
+    const next = ids
+      .map(
+        (id) =>
+          current.find((ingredient: any) => ingredient.id === id) ||
+          map.get(id),
+      )
+      .filter(Boolean);
 
     setSelectedIngredients(next);
     form.setFieldValue("compositionIds", ids);
+  };
+
+  const handleBulkIngredientsResolved = (ingredients: any[]) => {
+    const byId = new Map(
+      [...selectedIngredients, ...ingredients].map((ingredient: any) => [
+        ingredient.id,
+        ingredient,
+      ]),
+    );
+    const next = Array.from(byId.values());
+    setSelectedIngredients(next);
+    form.setFieldValue(
+      "compositionIds",
+      next.map((ingredient: any) => ingredient.id),
+    );
   };
 
   const buildFinalFlagIds = () => {
@@ -212,6 +247,7 @@ const CreateProductForm: React.FC<{ onSuccess?: () => void }> = ({ onSuccess }) 
       <Select
         mode="multiple"
         showSearch
+        value={selectedIngredients.map((ingredient: any) => ingredient.id)}
         placeholder="Rechercher un ingrédient"
         filterOption={false}
         onSearch={setIngredientSearch}
@@ -221,9 +257,29 @@ const CreateProductForm: React.FC<{ onSuccess?: () => void }> = ({ onSuccess }) 
         style={{ width: "100%" }}
       />
 
+      <div style={{ marginTop: 8 }}>
+        <IngredientBulkInput onResolved={handleBulkIngredientsResolved} />
+      </div>
+
       <div style={{ marginTop: 10 }}>
         {selectedIngredients.map((ingredient: any) => (
-          <Tag key={ingredient.id}>{getIngredientLabel(ingredient)}</Tag>
+          <Tag
+            key={ingredient.id}
+            closable
+            onClose={(event) => {
+              event.preventDefault();
+              const next = selectedIngredients.filter(
+                (item: any) => item.id !== ingredient.id,
+              );
+              setSelectedIngredients(next);
+              form.setFieldValue(
+                "compositionIds",
+                next.map((item: any) => item.id),
+              );
+            }}
+          >
+            {getIngredientLabel(ingredient)}
+          </Tag>
         ))}
       </div>
 

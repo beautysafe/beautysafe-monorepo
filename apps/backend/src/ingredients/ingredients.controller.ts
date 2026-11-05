@@ -17,7 +17,11 @@ import {
   ApiTags,
   ApiOperation,
   ApiQuery,
+  ApiOkResponse,
 } from '@nestjs/swagger';
+import { Ingredient, IngredientStatus } from './entities/ingredient.entity';
+import { ResolveIngredientsDto } from './dto/resolve-ingredients.dto';
+import { Roles } from '../common/decorators/roles.decorator';
 
 @ApiBearerAuth()
 @ApiTags('ingredients')
@@ -29,16 +33,48 @@ export class IngredientsController {
   create(@Body() createIngredientDto: CreateIngredientDto) {
     return this.ingredientsService.create(createIngredientDto);
   }
-  @ApiOperation({ summary: 'Search for brand' })
+  @ApiOperation({ summary: 'Search ingredients by name' })
+  @ApiQuery({ name: 'q', required: true, type: String, example: 'Aqua' })
+  @ApiQuery({ name: 'status', required: false, enum: IngredientStatus })
   @Get('search')
-  searchBrands(@Query('q') query: string) {
-    return this.ingredientsService.searchByName(query);
+  searchBrands(
+    @Query('q') query: string,
+    @Query('status') status?: IngredientStatus,
+  ) {
+    return this.ingredientsService.searchByName(query, status);
   }
+
+  @ApiOperation({
+    summary: 'Resolve a pasted ingredient list',
+    description:
+      'Matches names case-insensitively and creates missing ingredients with status NEW, score 0, and officialName equal to the submitted name.',
+  })
+  @ApiOkResponse({ type: [Ingredient] })
+  @Roles('admin')
+  @Post('resolve')
+  resolve(@Body() dto: ResolveIngredientsDto) {
+    return this.ingredientsService.resolveNames(dto.names);
+  }
+
   @Get()
   @ApiQuery({ name: 'page', required: false, type: Number })
   @ApiQuery({ name: 'limit', required: false, type: Number })
-  findAll(@Query('page') page = 1, @Query('limit') limit = 10) {
-    return this.ingredientsService.findAll(+page, +limit);
+  @ApiQuery({ name: 'status', required: false, enum: IngredientStatus })
+  findAll(
+    @Query('page') page = 1,
+    @Query('limit') limit = 10,
+    @Query('status') status: IngredientStatus = IngredientStatus.ACTIVE,
+  ) {
+    return this.ingredientsService.findAll(+page, +limit, status);
+  }
+
+  @Get('new')
+  @Roles('admin')
+  @ApiOperation({ summary: 'List ingredients awaiting admin review' })
+  @ApiQuery({ name: 'page', required: false, type: Number })
+  @ApiQuery({ name: 'limit', required: false, type: Number })
+  findNew(@Query('page') page = 1, @Query('limit') limit = 10) {
+    return this.ingredientsService.findAll(+page, +limit, IngredientStatus.NEW);
   }
 
   @Get(':id')

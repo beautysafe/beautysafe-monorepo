@@ -18,6 +18,7 @@ import {
   type ProductImageUploadValue,
 } from "../../../components/uploads/MultipleProductImageUpload";
 import { deleteUploadedFile } from "../../../services/upload.service";
+import IngredientBulkInput from "../../../components/IngredientBulkInput";
 interface EditProductFormProps {
   initialValues: Partial<Product>;
   onFinish: (values: any) => Promise<void>;
@@ -68,9 +69,9 @@ const EditProductForm: React.FC<EditProductFormProps> = ({
   const { data: searchedBrands, isLoading: isSearchingBrands } =
     useSearchBrands(brandSearch);
 
-  const [selectedBrandId, setSelectedBrandId] = React.useState<number | undefined>(
-    undefined
-  );
+  const [selectedBrandId, setSelectedBrandId] = React.useState<
+    number | undefined
+  >(undefined);
 
   const initialBrand = (initialValues as any)?.brand;
 
@@ -93,7 +94,7 @@ const EditProductForm: React.FC<EditProductFormProps> = ({
         ]
       : []),
     ...searchedBrandOptions.filter(
-      (option: any) => option.value !== initialBrand?.id
+      (option: any) => option.value !== initialBrand?.id,
     ),
   ];
 
@@ -107,9 +108,15 @@ const EditProductForm: React.FC<EditProductFormProps> = ({
 
   const { data: flags = [], isLoading: isLoadingFlags } = useFlags();
 
-  const [selectedIngredients, setSelectedIngredients] = React.useState<any[]>([]);
-  const [selectedSpecialFlagIds, setSelectedSpecialFlagIds] = React.useState<number[]>([]);
-  const [selectedCategoryFlagIds, setSelectedCategoryFlagIds] = React.useState<number[]>([]);
+  const [selectedIngredients, setSelectedIngredients] = React.useState<any[]>(
+    [],
+  );
+  const [selectedSpecialFlagIds, setSelectedSpecialFlagIds] = React.useState<
+    number[]
+  >([]);
+  const [selectedCategoryFlagIds, setSelectedCategoryFlagIds] = React.useState<
+    number[]
+  >([]);
 
   const specialFlagIds = [1, 2, 3];
   const hiddenRootFlagIds = [4, 13];
@@ -130,12 +137,12 @@ const EditProductForm: React.FC<EditProductFormProps> = ({
     const initialIds = initialFlagObjects.map((flag: any) => flag.id);
 
     const initialSpecial = initialIds.filter((id: number) =>
-      specialFlagIds.includes(id)
+      specialFlagIds.includes(id),
     );
 
     const initialCategory = initialIds.filter(
       (id: number) =>
-        !specialFlagIds.includes(id) && !hiddenRootFlagIds.includes(id)
+        !specialFlagIds.includes(id) && !hiddenRootFlagIds.includes(id),
     );
     const initialBrand = (initialValues as any)?.brand;
 
@@ -186,7 +193,8 @@ const EditProductForm: React.FC<EditProductFormProps> = ({
   const categoryFlagOptions = flags
     .filter(
       (flag: any) =>
-        !specialFlagIds.includes(flag.id) && !hiddenRootFlagIds.includes(flag.id)
+        !specialFlagIds.includes(flag.id) &&
+        !hiddenRootFlagIds.includes(flag.id),
     )
     .map((flag: any) => ({
       label: flagNamesFr[flag.name] || flag.name,
@@ -197,7 +205,7 @@ const EditProductForm: React.FC<EditProductFormProps> = ({
     const current = [...selectedIngredients];
 
     const searchedMap = new Map(
-      ingredientOptions.map((option: any) => [option.value, option.ingredient])
+      ingredientOptions.map((option: any) => [option.value, option.ingredient]),
     );
 
     const nextIngredients = ids
@@ -210,6 +218,21 @@ const EditProductForm: React.FC<EditProductFormProps> = ({
 
     setSelectedIngredients(nextIngredients);
     form.setFieldValue("compositionIds", ids);
+  };
+
+  const handleBulkIngredientsResolved = (ingredients: any[]) => {
+    const byId = new Map(
+      [...selectedIngredients, ...ingredients].map((ingredient: any) => [
+        ingredient.id,
+        ingredient,
+      ]),
+    );
+    const next = Array.from(byId.values());
+    setSelectedIngredients(next);
+    form.setFieldValue(
+      "compositionIds",
+      next.map((ingredient: any) => ingredient.id),
+    );
   };
 
   const handleSpecialFlagsChange = (ids: number[]) => {
@@ -229,10 +252,10 @@ const EditProductForm: React.FC<EditProductFormProps> = ({
     ]);
 
     const hasHairChild = selectedCategoryFlagIds.some((id) =>
-      hairSubFlagIds.includes(id)
+      hairSubFlagIds.includes(id),
     );
     const hasSkinChild = selectedCategoryFlagIds.some((id) =>
-      skinSubFlagIds.includes(id)
+      skinSubFlagIds.includes(id),
     );
 
     if (hasHairChild) {
@@ -362,6 +385,11 @@ const EditProductForm: React.FC<EditProductFormProps> = ({
         />
       </Form.Item>
 
+      <IngredientBulkInput
+        onResolved={handleBulkIngredientsResolved}
+        disabled={loading}
+      />
+
       <div style={{ marginBottom: 16 }}>
         {selectedIngredients.map((ingredient: any) => (
           <Tag
@@ -371,12 +399,12 @@ const EditProductForm: React.FC<EditProductFormProps> = ({
             onClose={(e) => {
               e.preventDefault();
               const next = selectedIngredients.filter(
-                (ing: any) => ing.id !== ingredient.id
+                (ing: any) => ing.id !== ingredient.id,
               );
               setSelectedIngredients(next);
               form.setFieldValue(
                 "compositionIds",
-                next.map((ing: any) => ing.id)
+                next.map((ing: any) => ing.id),
               );
             }}
           >
@@ -416,7 +444,9 @@ const EditProductForm: React.FC<EditProductFormProps> = ({
               style={{ marginBottom: 8 }}
               onClose={(e) => {
                 e.preventDefault();
-                const next = selectedSpecialFlagIds.filter((id) => id !== flag.id);
+                const next = selectedSpecialFlagIds.filter(
+                  (id) => id !== flag.id,
+                );
                 setSelectedSpecialFlagIds(next);
                 form.setFieldValue("specialFlagIds", next);
               }}
@@ -458,7 +488,9 @@ const EditProductForm: React.FC<EditProductFormProps> = ({
               style={{ marginBottom: 8 }}
               onClose={(e) => {
                 e.preventDefault();
-                const next = selectedCategoryFlagIds.filter((id) => id !== flag.id);
+                const next = selectedCategoryFlagIds.filter(
+                  (id) => id !== flag.id,
+                );
                 setSelectedCategoryFlagIds(next);
                 form.setFieldValue("categoryFlagIds", next);
               }}

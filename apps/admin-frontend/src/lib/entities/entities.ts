@@ -34,6 +34,7 @@ export interface Ingredient {
   name: string;
   officialName: string;
   score: number;
+  status: "ACTIVE" | "NEW";
   families: Family[];
 }
 

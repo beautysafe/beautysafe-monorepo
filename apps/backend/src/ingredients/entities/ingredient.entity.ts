@@ -4,9 +4,14 @@ import {
   Column,
   ManyToMany,
   JoinTable,
-  PrimaryColumn,
 } from 'typeorm';
+import { ApiProperty } from '@nestjs/swagger';
 import { Family } from '../../families/entities/family.entity';
+
+export enum IngredientStatus {
+  ACTIVE = 'ACTIVE',
+  NEW = 'NEW',
+}
 
 @Entity()
 export class Ingredient {
@@ -21,6 +26,14 @@ export class Ingredient {
 
   @Column('float')
   score: number;
+
+  @Column({
+    type: 'enum',
+    enum: IngredientStatus,
+    default: IngredientStatus.ACTIVE,
+  })
+  @ApiProperty({ enum: IngredientStatus, example: IngredientStatus.ACTIVE })
+  status: IngredientStatus;
 
   @ManyToMany(() => Family, { eager: true })
   @JoinTable({ name: 'ingredient_families' })

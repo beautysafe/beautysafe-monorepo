@@ -17,6 +17,7 @@ import NotFound from "./pages/not-found";
 import ComingSoon from "./pages/dashboard/coming-soon";
 import "./App.css";
 import IngredientsList from "./pages/dashboard/ingreddients/list-ingreddients";
+import NewIngredientsList from "./pages/dashboard/ingreddients/list-new-ingreddients";
 import BrandsList from "./pages/dashboard/brands/list-brands";
 import ProductsByBrand from "./pages/dashboard/brands/list-product-by-brand";
 import { jwtDecode } from "jwt-decode";
@@ -89,6 +90,7 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
                 element={<SubSubCategoriesPage />}
               />
               <Route path="ingredients" element={<IngredientsList />} />
+              <Route path="ingredients/new" element={<NewIngredientsList />} />
               <Route path="brands" element={<BrandsList />} />
               <Route path="brands/:brandId" element={<ProductsByBrand />} />
               <Route path="banners" element={<BannersList />} />
