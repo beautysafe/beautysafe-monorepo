@@ -40,11 +40,13 @@ export async function deleteIngredient(id: number | string): Promise<void> {
 }
 
 export async function searchIngredients(
-  q: string,
+  nameQuery: string,
+  officialNameQuery?: string,
   status?: Ingredient["status"],
 ): Promise<Ingredient[]> {
   return api.get("/ingredients/search", {
-    q,
+    ...(nameQuery?.trim() ? { name: nameQuery } : {}),
+    ...(officialNameQuery?.trim() ? { officialName: officialNameQuery } : {}),
     ...(status ? { status } : {}),
   });
 }

@@ -12,12 +12,25 @@ export class IngredientsService {
     private ingredientRepository: Repository<Ingredient>,
   ) {}
   async searchByName(query: string, status?: IngredientStatus) {
+    return this.searchIngredients(query, undefined, status);
+  }
+
+  async searchIngredients(
+    nameQuery?: string,
+    officialNameQuery?: string,
+    status?: IngredientStatus,
+  ) {
+    const name = nameQuery?.trim();
+    const officialName = officialNameQuery?.trim();
+    if (!name && !officialName) return [];
+
     return this.ingredientRepository.find({
       where: {
-        name: ILike(`${query}%`),
+        ...(name ? { name: ILike(`${name}%`) } : {}),
+        ...(officialName ? { officialName: ILike(`${officialName}%`) } : {}),
         ...(status ? { status } : {}),
       },
-      order: { name: 'ASC' },
+      order: { officialName: 'ASC', name: 'ASC' },
       take: 10,
     });
   }

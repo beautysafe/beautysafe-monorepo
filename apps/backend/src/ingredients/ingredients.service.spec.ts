@@ -69,4 +69,28 @@ describe('IngredientsService', () => {
       take: 20,
     });
   });
+
+  it('supports searching by official name without requiring the ingredient name', async () => {
+    const find = jest.fn().mockResolvedValue([]);
+    const repository = {
+      find,
+    } as unknown as Repository<Ingredient>;
+    const service = new IngredientsService(repository);
+
+    await service.searchIngredients(undefined, 'AQUA', IngredientStatus.ACTIVE);
+
+    const calls = find.mock.calls as unknown as Array<
+      [{ where: Record<string, unknown> }]
+    >;
+    const options = calls[0][0];
+    expect(options.where.officialName).toBeDefined();
+    expect(options.where.name).toBeUndefined();
+    expect(options.where.status).toBe(IngredientStatus.ACTIVE);
+    expect(options).toEqual(
+      expect.objectContaining({
+        order: { officialName: 'ASC', name: 'ASC' },
+        take: 10,
+      }),
+    );
+  });
 });

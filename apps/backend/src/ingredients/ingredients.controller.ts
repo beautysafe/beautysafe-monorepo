@@ -33,15 +33,41 @@ export class IngredientsController {
   create(@Body() createIngredientDto: CreateIngredientDto) {
     return this.ingredientsService.create(createIngredientDto);
   }
-  @ApiOperation({ summary: 'Search ingredients by name' })
-  @ApiQuery({ name: 'q', required: true, type: String, example: 'Aqua' })
+  @ApiOperation({ summary: 'Search ingredients by name or official name' })
+  @ApiQuery({
+    name: 'q',
+    required: false,
+    type: String,
+    example: 'Aqua',
+    description: 'Backward-compatible alias for the name filter',
+  })
+  @ApiQuery({
+    name: 'name',
+    required: false,
+    type: String,
+    example: 'Aqua',
+    description: 'Search the ingredient name by prefix',
+  })
+  @ApiQuery({
+    name: 'officialName',
+    required: false,
+    type: String,
+    example: 'AQUA',
+    description: 'Search the official ingredient name by prefix',
+  })
   @ApiQuery({ name: 'status', required: false, enum: IngredientStatus })
   @Get('search')
-  searchBrands(
-    @Query('q') query: string,
+  searchIngredients(
+    @Query('q') legacyQuery?: string,
+    @Query('name') nameQuery?: string,
+    @Query('officialName') officialNameQuery?: string,
     @Query('status') status?: IngredientStatus,
   ) {
-    return this.ingredientsService.searchByName(query, status);
+    return this.ingredientsService.searchIngredients(
+      nameQuery ?? legacyQuery,
+      officialNameQuery,
+      status,
+    );
   }
 
   @ApiOperation({

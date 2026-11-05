@@ -72,11 +72,15 @@ export function useDeleteIngredient() {
   });
 }
 
-export function useSearchIngredients(q: string, status?: Ingredient["status"]) {
+export function useSearchIngredients(
+  nameQuery: string,
+  officialNameQuery?: string,
+  status?: Ingredient["status"],
+) {
   return useQuery({
-    queryKey: ["ingredientsSearch", q, status],
-    queryFn: () => searchIngredients(q, status),
-    enabled: !!q,
+    queryKey: ["ingredientsSearch", nameQuery, officialNameQuery, status],
+    queryFn: () => searchIngredients(nameQuery, officialNameQuery, status),
+    enabled: !!nameQuery || !!officialNameQuery,
   });
 }
 

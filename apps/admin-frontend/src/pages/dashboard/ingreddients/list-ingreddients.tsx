@@ -21,24 +21,33 @@ import type { Ingredient } from "../../../lib/entities";
 
 const PAGE_SIZE = 20;
 
+const submitForm = (formId: string) => {
+  document
+    .getElementById(formId)
+    ?.dispatchEvent(new Event("submit", { cancelable: true, bubbles: true }));
+};
+
 const IngredientsList: React.FC<{ status?: Ingredient["status"] }> = ({
   status = "ACTIVE",
 }) => {
   const [page, setPage] = useState(1);
-  const [search, setSearch] = useState(""); // search value
+  const [nameSearch, setNameSearch] = useState("");
+  const [officialNameSearch, setOfficialNameSearch] = useState("");
   const [editing, setEditing] = useState<Ingredient | null>(null);
   const [creating, setCreating] = useState(false);
 
   const { data, isLoading } = useIngreddients(page, PAGE_SIZE, status);
   const { data: searchResults, isLoading: isSearching } = useSearchIngredients(
-    search,
+    nameSearch,
+    officialNameSearch,
     status,
   );
   const updateIngredient = useUpdateIngredient();
   const createIngredient = useCreateIngredient();
   const deleteIngredient = useDeleteIngredient();
 
-  const ingredients = search
+  const hasSearch = Boolean(nameSearch || officialNameSearch);
+  const ingredients = hasSearch
     ? Array.isArray(searchResults)
       ? searchResults
       : []
@@ -46,7 +55,7 @@ const IngredientsList: React.FC<{ status?: Ingredient["status"] }> = ({
       ? data
       : [];
 
-  const total = search ? ingredients.length : 12000;
+  const total = hasSearch ? ingredients.length : 12000;
 
   const columns = [
     {
@@ -78,7 +87,7 @@ const IngredientsList: React.FC<{ status?: Ingredient["status"] }> = ({
     {
       title: "Actions",
       key: "actions",
-      render: (_: any, record: Ingredient) => (
+      render: (_value: unknown, record: Ingredient) => (
         <Space>
           <Button type="link" onClick={() => setEditing(record)}>
             Modifier
@@ -136,13 +145,28 @@ const IngredientsList: React.FC<{ status?: Ingredient["status"] }> = ({
 
   return (
     <>
-      <Input.Search
-        placeholder="Rechercher un ingrédient..."
-        onSearch={setSearch}
-        allowClear
-        style={{ width: 320, marginBottom: 16 }}
-        enterButton
-      />
+      <Space wrap style={{ marginBottom: 16 }}>
+        <Input.Search
+          placeholder="Rechercher par nom..."
+          value={nameSearch}
+          onChange={(event) => setNameSearch(event.target.value)}
+          onSearch={setNameSearch}
+          onClear={() => setNameSearch("")}
+          allowClear
+          style={{ width: 320 }}
+          enterButton
+        />
+        <Input.Search
+          placeholder="Rechercher par nom officiel..."
+          value={officialNameSearch}
+          onChange={(event) => setOfficialNameSearch(event.target.value)}
+          onSearch={setOfficialNameSearch}
+          onClear={() => setOfficialNameSearch("")}
+          allowClear
+          style={{ width: 320 }}
+          enterButton
+        />
+      </Space>
 
       {status === "ACTIVE" && (
         <Button
@@ -160,7 +184,7 @@ const IngredientsList: React.FC<{ status?: Ingredient["status"] }> = ({
         rowKey="id"
         loading={isLoading || isSearching}
         pagination={
-          search
+          hasSearch
             ? false // No pagination in search mode, unless your API supports it
             : {
                 current: page,
@@ -177,11 +201,7 @@ const IngredientsList: React.FC<{ status?: Ingredient["status"] }> = ({
         title="Modifier l’ingrédient"
         open={!!editing}
         onCancel={() => setEditing(null)}
-        onOk={() =>
-          (document.getElementById("edit-form") as any).dispatchEvent(
-            new Event("submit", { cancelable: true, bubbles: true }),
-          )
-        }
+        onOk={() => submitForm("edit-form")}
         confirmLoading={updateIngredient.isPending}
         destroyOnClose
       >
@@ -212,11 +232,7 @@ const IngredientsList: React.FC<{ status?: Ingredient["status"] }> = ({
         title="Ajouter un ingrédient"
         open={creating}
         onCancel={() => setCreating(false)}
-        onOk={() =>
-          (document.getElementById("create-form") as any).dispatchEvent(
-            new Event("submit", { cancelable: true, bubbles: true }),
-          )
-        }
+        onOk={() => submitForm("create-form")}
         confirmLoading={createIngredient.isPending}
         destroyOnClose
       >
