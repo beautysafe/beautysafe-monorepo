@@ -6,6 +6,7 @@ import { useFlagById } from "../../../hooks/useFlag";
 import type { Product } from "../../../lib/entities";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import CreateProductForm from "./create-product-form";
+import { formatBeautySafeScore } from "../../../lib/beautysafe-score";
 
 const cleanUrl = (value?: string | null): string | undefined => {
   const url = value?.trim();
@@ -110,8 +111,7 @@ const ProductsList: React.FC = () => {
       dataIndex: "valide_bs_score",
       key: "valide_bs_score",
       width: 140,
-      render: (value: number) =>
-        value > 0 ? `${value} / 100 (provisoire)` : "Non calculé",
+      render: (value: number | null) => formatBeautySafeScore(value),
     },
     {
       title: "Image",

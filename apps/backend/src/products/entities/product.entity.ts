@@ -40,15 +40,17 @@ export class Product {
   validScore: number;
 
   @ApiProperty({
-    example: 82,
+    type: Number,
+    example: 0,
     minimum: 0,
     maximum: 100,
-    default: 0,
+    nullable: true,
+    default: null,
     description:
-      'Server-calculated provisional BeautySafe score. Ingredient ID order is used until INCI positions are stored.',
+      'Server-calculated provisional BeautySafe score. Null means uncalculated or not publishable; numeric zero is a valid calculated score. Ingredient ID order is used until INCI positions are stored.',
   })
-  @Column({ type: 'integer', default: 0 })
-  valide_bs_score: number;
+  @Column({ type: 'integer', nullable: true, default: null })
+  valide_bs_score: number | null;
 
   @ApiProperty({ example: '3264680010535' })
   @Column({ unique: true })

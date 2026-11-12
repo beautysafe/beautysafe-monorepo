@@ -4,12 +4,14 @@ import { ILike, Repository } from 'typeorm';
 import { Ingredient, IngredientStatus } from './entities/ingredient.entity';
 import { CreateIngredientDto } from './dto/create-ingredient.dto';
 import { UpdateIngredientDto } from './dto/update-ingredient.dto';
+import { BeautySafeScoringService } from '../beautysafe-scoring/beautysafe-scoring.service';
 
 @Injectable()
 export class IngredientsService {
   constructor(
     @InjectRepository(Ingredient)
     private ingredientRepository: Repository<Ingredient>,
+    private readonly beautySafeScoring: BeautySafeScoringService,
   ) {}
   async searchByName(query: string, status?: IngredientStatus) {
     return this.searchIngredients(query, undefined, status);
@@ -117,8 +119,18 @@ export class IngredientsService {
       where: { id },
     });
     if (!ingredient) throw new NotFoundException('Ingredient not found');
+    const scoreChanged =
+      updateIngredientDto.bs_score !== undefined &&
+      updateIngredientDto.bs_score !== ingredient.bs_score;
+    const statusChanged =
+      updateIngredientDto.status !== undefined &&
+      updateIngredientDto.status !== ingredient.status;
     Object.assign(ingredient, updateIngredientDto);
-    return this.ingredientRepository.save(ingredient);
+    const savedIngredient = await this.ingredientRepository.save(ingredient);
+    if (scoreChanged || statusChanged) {
+      this.beautySafeScoring.scheduleIngredientRecalculation(id);
+    }
+    return savedIngredient;
   }
 
   async remove(id: number) {

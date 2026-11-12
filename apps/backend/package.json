@@ -24,7 +24,9 @@
     "migration:run:prod": "typeorm -d dist/database/data-source.js migration:run",
     "migration:revert": "pnpm typeorm migration:revert",
     "migration:show": "pnpm typeorm migration:show",
-    "migration:show:prod": "typeorm -d dist/database/data-source.js migration:show"
+    "migration:show:prod": "typeorm -d dist/database/data-source.js migration:show",
+    "bs-score:reconcile-skipped": "ts-node src/database/scripts/reconcile-skipped-bs-scores.ts",
+    "bs-score:reconcile-skipped:prod": "node dist/database/scripts/reconcile-skipped-bs-scores.js"
   },
   "dependencies": {
     "@nestjs/common": "^11.0.1",

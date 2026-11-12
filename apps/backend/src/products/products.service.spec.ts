@@ -8,8 +8,9 @@ import { FirebaseStorageService } from '../storage/firebase-storage.service';
 import { SubCategory } from '../subcategories/entities/subcategory.entity';
 import { SubSubCategory } from '../subsubcategories/entities/subsubcategory.entity';
 import { ProductImage } from './entities/product-image.entity';
-import { Product } from './entities/product.entity';
+import { Product, ProductType } from './entities/product.entity';
 import { ProductsService } from './products.service';
+import { BeautySafeScoringService } from '../beautysafe-scoring/beautysafe-scoring.service';
 
 describe('ProductsService rating integration', () => {
   it('handles a zero-feedback product and an empty flag page', async () => {
@@ -63,6 +64,7 @@ describe('ProductsService rating integration', () => {
       emptyRepository as Repository<ProductImage>,
       ratingAggregation,
       {} as FirebaseStorageService,
+      {} as BeautySafeScoringService,
     );
 
     await expect(service.findByEan('4005808222520')).resolves.toMatchObject({
@@ -79,5 +81,117 @@ describe('ProductsService rating integration', () => {
       limit: 10,
       hasMore: false,
     });
+  });
+
+  it('calculates the BeautySafe score after product composition is saved', async () => {
+    const brand = { id: 1, totalProducts: 0 } as Brand;
+    const productsRepository = {
+      create: jest.fn((value: Partial<Product>) => value as Product),
+      save: jest.fn((value: Product) =>
+        Promise.resolve(Object.assign(value, { uid: 100 })),
+      ),
+    } as unknown as Repository<Product>;
+    const brandsRepository = {
+      findOne: jest.fn().mockResolvedValue(brand),
+      save: jest.fn().mockResolvedValue(brand),
+    } as unknown as Repository<Brand>;
+    const ingredientsRepository = {
+      find: jest.fn().mockResolvedValue([]),
+    } as unknown as Repository<Ingredient>;
+    const flagsRepository = {
+      increment: jest.fn(),
+    } as unknown as Repository<Flag>;
+    const ratingAggregation = {
+      attachToProducts: jest.fn((products: Product[]) =>
+        Promise.resolve(products),
+      ),
+    } as unknown as ProductRatingAggregationService;
+    const recalculateProduct = jest.fn().mockResolvedValue(0);
+    const scoring = {
+      recalculateProduct,
+    } as unknown as BeautySafeScoringService;
+    const emptyRepository = {} as Repository<never>;
+    const service = new ProductsService(
+      productsRepository,
+      brandsRepository,
+      emptyRepository as Repository<Category>,
+      emptyRepository as Repository<SubCategory>,
+      emptyRepository as Repository<SubSubCategory>,
+      ingredientsRepository,
+      flagsRepository,
+      emptyRepository as Repository<ProductImage>,
+      ratingAggregation,
+      {} as FirebaseStorageService,
+      scoring,
+    );
+
+    const product = await service.create({
+      name: 'Product',
+      validScore: 12,
+      ean: '1234567890123',
+      type: ProductType.ALL,
+      brandId: 1,
+      compositionIds: [],
+      flagIds: [],
+    });
+
+    expect(recalculateProduct).toHaveBeenCalledWith(100);
+    expect(product.valide_bs_score).toBe(0);
+  });
+
+  it('recalculates only when an update includes compositionIds', async () => {
+    const product = {
+      uid: 200,
+      name: 'Product',
+      validScore: 12,
+      valide_bs_score: 10,
+      images: [],
+      composition: [],
+      flags: [],
+      category: null,
+      subCategory: null,
+      subSubCategory: null,
+      brand: { id: 1, totalProducts: 0 },
+    } as unknown as Product;
+    const productsRepository = {
+      findOne: jest.fn().mockResolvedValue(product),
+      save: jest.fn((value: Product) => Promise.resolve(value)),
+    } as unknown as Repository<Product>;
+    const ingredientsRepository = {
+      find: jest.fn().mockResolvedValue([]),
+    } as unknown as Repository<Ingredient>;
+    const ratingAggregation = {
+      attachToProducts: jest.fn((products: Product[]) =>
+        Promise.resolve(products),
+      ),
+    } as unknown as ProductRatingAggregationService;
+    const recalculateProduct = jest.fn().mockResolvedValue(42);
+    const scoring = {
+      recalculateProduct,
+    } as unknown as BeautySafeScoringService;
+    const emptyRepository = {} as Repository<never>;
+    const service = new ProductsService(
+      productsRepository,
+      emptyRepository as Repository<Brand>,
+      emptyRepository as Repository<Category>,
+      emptyRepository as Repository<SubCategory>,
+      emptyRepository as Repository<SubSubCategory>,
+      ingredientsRepository,
+      emptyRepository as Repository<Flag>,
+      emptyRepository as Repository<ProductImage>,
+      ratingAggregation,
+      {} as FirebaseStorageService,
+      scoring,
+    );
+
+    const compositionUpdate = await service.update(200, {
+      compositionIds: [],
+    });
+    expect(recalculateProduct).toHaveBeenCalledWith(200);
+    expect(compositionUpdate.valide_bs_score).toBe(42);
+
+    recalculateProduct.mockClear();
+    await service.update(200, { validScore: 99 });
+    expect(recalculateProduct).not.toHaveBeenCalled();
   });
 });

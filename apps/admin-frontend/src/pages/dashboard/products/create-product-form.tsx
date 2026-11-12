@@ -19,6 +19,7 @@ import {
 } from "../../../components/uploads/MultipleProductImageUpload";
 import { deleteUploadedFile } from "../../../services/upload.service";
 import IngredientBulkInput from "../../../components/IngredientBulkInput";
+import { formatBeautySafeScore } from "../../../lib/beautysafe-score";
 
 const flagNamesFr: Record<string, string> = {
   BEST_PRODUCT: "Meilleur produit",
@@ -185,9 +186,7 @@ const CreateProductForm: React.FC<{ onSuccess?: () => void }> = ({
       setUploadsCommitted(true);
       setImages([]);
       message.success(
-        createdProduct.valide_bs_score > 0
-          ? `Produit créé — score BeautySafe provisoire : ${createdProduct.valide_bs_score} / 100`
-          : "Produit créé — score BeautySafe non calculé",
+        `Produit créé — score BeautySafe : ${formatBeautySafeScore(createdProduct.valide_bs_score)}`,
       );
       form.resetFields();
       setTimeout(() => onSuccess?.(), 0);

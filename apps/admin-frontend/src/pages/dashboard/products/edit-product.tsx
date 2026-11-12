@@ -19,6 +19,7 @@ import {
 } from "../../../components/uploads/MultipleProductImageUpload";
 import { deleteUploadedFile } from "../../../services/upload.service";
 import IngredientBulkInput from "../../../components/IngredientBulkInput";
+import { formatBeautySafeScore } from "../../../lib/beautysafe-score";
 interface EditProductFormProps {
   initialValues: Partial<Product>;
   onFinish: (values: any) => Promise<void>;
@@ -354,11 +355,7 @@ const EditProductForm: React.FC<EditProductFormProps> = ({
         extra="Read-only provisional score using ingredient ID order. It is recalculated after composition changes."
       >
         <Input
-          value={
-            (initialValues.valide_bs_score ?? 0) > 0
-              ? `${initialValues.valide_bs_score} / 100 — Provisional`
-              : "Not calculated"
-          }
+          value={formatBeautySafeScore(initialValues.valide_bs_score)}
           readOnly
         />
       </Form.Item>

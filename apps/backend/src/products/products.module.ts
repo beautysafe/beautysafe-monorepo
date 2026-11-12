@@ -11,6 +11,7 @@ import { Flag } from '../flags/entities/flag.entity';
 import { SubCategory } from '../subcategories/entities/subcategory.entity';
 import { Category } from '../categories/entities/category.entity';
 import { ProductFeedbackModule } from '../product-feedback/product-feedback.module';
+import { BeautySafeScoringModule } from '../beautysafe-scoring/beautysafe-scoring.module';
 
 @Module({
   imports: [
@@ -25,6 +26,7 @@ import { ProductFeedbackModule } from '../product-feedback/product-feedback.modu
       SubSubCategory,
     ]),
     ProductFeedbackModule,
+    BeautySafeScoringModule,
   ],
   controllers: [ProductsController],
   providers: [ProductsService],

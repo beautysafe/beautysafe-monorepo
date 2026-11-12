@@ -99,7 +99,7 @@ export interface Product {
   uid: number;
   name: string;
   validScore: number;
-  valide_bs_score: number;
+  valide_bs_score: number | null;
   ean: string;
   type: ProductType;
   brand: Brand;

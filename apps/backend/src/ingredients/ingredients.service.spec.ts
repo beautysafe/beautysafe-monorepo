@@ -1,6 +1,9 @@
 import { Repository } from 'typeorm';
 import { Ingredient, IngredientStatus } from './entities/ingredient.entity';
 import { IngredientsService } from './ingredients.service';
+import { BeautySafeScoringService } from '../beautysafe-scoring/beautysafe-scoring.service';
+
+const scoringService = {} as BeautySafeScoringService;
 
 describe('IngredientsService', () => {
   it('resolves existing names and creates missing names as NEW in one lookup', async () => {
@@ -32,7 +35,7 @@ describe('IngredientsService', () => {
       create,
       save,
     } as unknown as Repository<Ingredient>;
-    const service = new IngredientsService(repository);
+    const service = new IngredientsService(repository, scoringService);
 
     await expect(
       service.resolveNames([' aqua ', 'New preservative', 'NEW PRESERVATIVE']),
@@ -62,7 +65,7 @@ describe('IngredientsService', () => {
     const repository = {
       find,
     } as unknown as Repository<Ingredient>;
-    const service = new IngredientsService(repository);
+    const service = new IngredientsService(repository, scoringService);
 
     await service.findAll(2, 20);
 
@@ -79,7 +82,7 @@ describe('IngredientsService', () => {
     const repository = {
       find,
     } as unknown as Repository<Ingredient>;
-    const service = new IngredientsService(repository);
+    const service = new IngredientsService(repository, scoringService);
 
     await service.searchIngredients(undefined, 'AQUA', IngredientStatus.ACTIVE);
 
@@ -96,5 +99,29 @@ describe('IngredientsService', () => {
         take: 10,
       }),
     );
+  });
+
+  it('schedules affected products when bs_score changes', async () => {
+    const ingredient = {
+      id: 10,
+      name: 'Ingredient',
+      officialName: 'INGREDIENT',
+      score: 0,
+      bs_score: 0,
+      status: IngredientStatus.ACTIVE,
+    } as Ingredient;
+    const repository = {
+      findOne: jest.fn().mockResolvedValue(ingredient),
+      save: jest.fn((value: Ingredient) => Promise.resolve(value)),
+    } as unknown as Repository<Ingredient>;
+    const scheduleIngredientRecalculation = jest.fn();
+    const scoring = {
+      scheduleIngredientRecalculation,
+    } as unknown as BeautySafeScoringService;
+    const service = new IngredientsService(repository, scoring);
+
+    await service.update(10, { bs_score: 5 });
+
+    expect(scheduleIngredientRecalculation).toHaveBeenCalledWith(10);
   });
 });

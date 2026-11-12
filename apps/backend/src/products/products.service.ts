@@ -15,6 +15,7 @@ import { SearchProductsDto } from './dto/search-products.dto';
 import { FirebaseStorageService } from '../storage/firebase-storage.service';
 import { ProductRatingAggregationService } from '../product-feedback/product-rating-aggregation.service';
 import { ProductRatingSummaryDto } from '../product-feedback/dto/product-feedback-page.dto';
+import { BeautySafeScoringService } from '../beautysafe-scoring/beautysafe-scoring.service';
 
 @Injectable()
 export class ProductsService {
@@ -39,6 +40,7 @@ export class ProductsService {
     private productImagesRepository: Repository<ProductImage>,
     private readonly ratingAggregation: ProductRatingAggregationService,
     private readonly storage: FirebaseStorageService,
+    private readonly beautySafeScoring: BeautySafeScoringService,
   ) {}
 
   // Create Product
@@ -140,6 +142,8 @@ export class ProductsService {
     } as Partial<Product>);
 
     const savedProduct = await this.productsRepository.save(product);
+    savedProduct.valide_bs_score =
+      await this.beautySafeScoring.recalculateProduct(savedProduct.uid);
 
     if (category) {
       category.totalProducts += 1;
@@ -174,6 +178,10 @@ export class ProductsService {
         ),
       );
       const saved = await this.updatePersist(uid, updateProductDto);
+      if (updateProductDto.compositionIds !== undefined) {
+        saved.valide_bs_score =
+          await this.beautySafeScoring.recalculateProduct(uid);
+      }
       if (updateProductDto.imageUrls || updateProductDto.thumbnailUrls) {
         await this.cleanupFiles(
           previousKeys.filter((key) => !nextKeys.includes(key)),
