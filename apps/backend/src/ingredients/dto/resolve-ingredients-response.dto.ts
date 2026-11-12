@@ -19,6 +19,11 @@ export class ResolveIngredientsResponseDto {
   @ApiProperty({ example: 1 })
   newCount: number;
 
-  @ApiProperty({ type: [AmbiguousIngredientMatchDto] })
+  @ApiProperty({
+    type: [AmbiguousIngredientMatchDto],
+    deprecated: true,
+    description:
+      'Backward-compatible field. Automatic resolution selects a deterministic existing match, so this is always empty.',
+  })
   ambiguous: AmbiguousIngredientMatchDto[];
 }

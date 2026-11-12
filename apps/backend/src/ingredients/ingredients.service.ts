@@ -9,6 +9,18 @@ import { IngredientSearchQueryDto } from './dto/ingredient-search-query.dto';
 import { IngredientSearchResponseDto } from './dto/ingredient-search-response.dto';
 import { ResolveIngredientsResponseDto } from './dto/resolve-ingredients-response.dto';
 
+const normalizeIngredientName = (value: string): string =>
+  value.trim().replace(/\s+/g, ' ').toLocaleLowerCase();
+
+const compareResolutionCandidates = (
+  left: Ingredient,
+  right: Ingredient,
+): number => {
+  const leftStatusPriority = left.status === IngredientStatus.ACTIVE ? 0 : 1;
+  const rightStatusPriority = right.status === IngredientStatus.ACTIVE ? 0 : 1;
+  return leftStatusPriority - rightStatusPriority || left.id - right.id;
+};
+
 @Injectable()
 export class IngredientsService {
   constructor(
@@ -127,7 +139,7 @@ export class IngredientsService {
     const seenNames = new Set<string>();
     for (const rawName of names) {
       const originalName = rawName.trim();
-      const normalizedName = originalName.toLocaleLowerCase();
+      const normalizedName = normalizeIngredientName(originalName);
       if (originalName && !seenNames.has(normalizedName)) {
         seenNames.add(normalizedName);
         normalizedNames.push([normalizedName, originalName]);
@@ -158,11 +170,12 @@ export class IngredientsService {
         .where(
           new Brackets((match) => {
             match
-              .where('LOWER(TRIM(ingredient.name)) IN (:...normalizedNames)', {
-                normalizedNames: normalizedValues,
-              })
+              .where(
+                `LOWER(REGEXP_REPLACE(TRIM(ingredient."officialName"), '[[:space:]]+', ' ', 'g')) IN (:...normalizedNames)`,
+                { normalizedNames: normalizedValues },
+              )
               .orWhere(
-                'LOWER(TRIM(ingredient."officialName")) IN (:...normalizedNames)',
+                `LOWER(REGEXP_REPLACE(TRIM(ingredient.name), '[[:space:]]+', ' ', 'g')) IN (:...normalizedNames)`,
                 { normalizedNames: normalizedValues },
               );
           }),
@@ -170,33 +183,31 @@ export class IngredientsService {
         .orderBy('ingredient.id', 'ASC')
         .getMany();
 
-      const matchesByInput = new Map<string, Map<number, Ingredient>>(
-        normalizedValues.map((value) => [value, new Map()]),
+      const officialMatchesByInput = new Map<string, Ingredient[]>(
+        normalizedValues.map((value) => [value, []]),
+      );
+      const nameMatchesByInput = new Map<string, Ingredient[]>(
+        normalizedValues.map((value) => [value, []]),
       );
       existing.forEach((ingredient) => {
-        const aliases = new Set([
-          ingredient.name.trim().toLocaleLowerCase(),
-          ingredient.officialName.trim().toLocaleLowerCase(),
-        ]);
-        aliases.forEach((alias) => {
-          matchesByInput.get(alias)?.set(ingredient.id, ingredient);
-        });
+        const officialName = normalizeIngredientName(ingredient.officialName);
+        const name = normalizeIngredientName(ingredient.name);
+        officialMatchesByInput.get(officialName)?.push(ingredient);
+        nameMatchesByInput.get(name)?.push(ingredient);
       });
 
-      const ambiguous = normalizedNames.flatMap(([normalized, input]) => {
-        const matches = Array.from(
-          matchesByInput.get(normalized)?.values() ?? [],
-        );
-        return matches.length > 1 ? [{ input, matches }] : [];
+      const selectedByInput = new Map<string, Ingredient>();
+      normalizedValues.forEach((normalized) => {
+        const officialMatches = officialMatchesByInput.get(normalized) ?? [];
+        const nameMatches = nameMatchesByInput.get(normalized) ?? [];
+        const selected =
+          [...officialMatches].sort(compareResolutionCandidates)[0] ??
+          [...nameMatches].sort(compareResolutionCandidates)[0];
+        if (selected) selectedByInput.set(normalized, selected);
       });
-      const ambiguousInputs = new Set(
-        ambiguous.map((entry) => entry.input.trim().toLocaleLowerCase()),
-      );
+
       const missing = normalizedNames
-        .filter(([normalized]) => {
-          const matches = matchesByInput.get(normalized);
-          return !ambiguousInputs.has(normalized) && !matches?.size;
-        })
+        .filter(([normalized]) => !selectedByInput.has(normalized))
         .map(([normalized, original]) => ({
           normalized,
           ingredient: repository.create({
@@ -219,10 +230,7 @@ export class IngredientsService {
       let existingCount = 0;
       let newCount = 0;
       normalizedNames.forEach(([normalized]) => {
-        if (ambiguousInputs.has(normalized)) return;
-        const existingIngredient = Array.from(
-          matchesByInput.get(normalized)?.values() ?? [],
-        )[0];
+        const existingIngredient = selectedByInput.get(normalized);
         const ingredient = existingIngredient ?? createdByInput.get(normalized);
         if (!ingredient || seenIds.has(ingredient.id)) return;
         seenIds.add(ingredient.id);
@@ -231,7 +239,12 @@ export class IngredientsService {
         else newCount += 1;
       });
 
-      return { ingredients, existingCount, newCount, ambiguous };
+      return {
+        ingredients,
+        existingCount,
+        newCount,
+        ambiguous: [],
+      };
     });
   }
 

@@ -77,7 +77,7 @@ export class IngredientsController {
     required: false,
     type: Boolean,
     description:
-      'Return resolution counts and ambiguities. Omit for the legacy Ingredient[] response.',
+      'Return existing/new resolution counts. Omit for the legacy Ingredient[] response.',
   })
   @ApiOkResponse({
     schema: {

@@ -166,10 +166,20 @@ describe('IngredientsService', () => {
     expect(aqua).toMatchObject({ score: 2, bs_score: 5 });
   });
 
-  it('reports ambiguous exact aliases instead of selecting or creating', async () => {
-    const first = ingredient(1, 'Shared alias', 'FIRST');
-    const second = ingredient(2, 'SECOND', 'Shared alias');
-    const queryBuilder = createQueryBuilder([first, second]);
+  it('resolves duplicate LAURETH-4 records to the lowest-ID ACTIVE match', async () => {
+    const lowestActive = ingredient(144, 'LAURETH-4', 'LAURETH-4');
+    const otherActive = ingredient(1000065, 'Laureth-4', 'LAURETH-4');
+    const newMatch = ingredient(
+      1000154,
+      'Laureth-4',
+      'LAURETH-4',
+      IngredientStatus.NEW,
+    );
+    const queryBuilder = createQueryBuilder([
+      newMatch,
+      otherActive,
+      lowestActive,
+    ]);
     const save = jest.fn();
     const transactionRepository = {
       createQueryBuilder: jest.fn().mockReturnValue(queryBuilder),
@@ -189,15 +199,148 @@ describe('IngredientsService', () => {
     } as unknown as Repository<Ingredient>;
     const service = new IngredientsService(repository, scoringService);
 
-    const result = await service.resolveNames(['Shared alias']);
+    const result = await service.resolveNames([' LAURETH-4 ', 'laureth-4']);
 
     expect(result).toEqual({
-      ingredients: [],
-      existingCount: 0,
+      ingredients: [lowestActive],
+      existingCount: 1,
       newCount: 0,
-      ambiguous: [{ input: 'Shared alias', matches: [first, second] }],
+      ambiguous: [],
     });
     expect(save).not.toHaveBeenCalled();
+  });
+
+  it('prioritizes an exact officialName match before an exact name match', async () => {
+    const activeNameMatch = ingredient(10, 'SHARED', 'OTHER');
+    const newOfficialMatch = ingredient(
+      20,
+      'Alternative',
+      'SHARED',
+      IngredientStatus.NEW,
+    );
+    const queryBuilder = createQueryBuilder([
+      activeNameMatch,
+      newOfficialMatch,
+    ]);
+    const transactionRepository = {
+      createQueryBuilder: jest.fn().mockReturnValue(queryBuilder),
+      create: jest.fn(),
+      save: jest.fn(),
+    } as unknown as Repository<Ingredient>;
+    const manager = {
+      query: jest.fn().mockResolvedValue([]),
+      getRepository: jest.fn().mockReturnValue(transactionRepository),
+    } as unknown as EntityManager;
+    const repository = {
+      manager: {
+        transaction: (
+          callback: (entityManager: EntityManager) => Promise<unknown>,
+        ) => callback(manager),
+      },
+    } as unknown as Repository<Ingredient>;
+    const service = new IngredientsService(repository, scoringService);
+
+    await expect(service.resolveNames(['shared'])).resolves.toEqual({
+      ingredients: [newOfficialMatch],
+      existingCount: 1,
+      newCount: 0,
+      ambiguous: [],
+    });
+  });
+
+  it('prefers an ACTIVE duplicate even when a NEW duplicate has a lower ID', async () => {
+    const lowerIdNew = ingredient(
+      10,
+      'Laureth-4',
+      'LAURETH-4',
+      IngredientStatus.NEW,
+    );
+    const active = ingredient(20, 'LAURETH-4', 'LAURETH-4');
+    const queryBuilder = createQueryBuilder([lowerIdNew, active]);
+    const transactionRepository = {
+      createQueryBuilder: jest.fn().mockReturnValue(queryBuilder),
+      create: jest.fn(),
+      save: jest.fn(),
+    } as unknown as Repository<Ingredient>;
+    const manager = {
+      query: jest.fn().mockResolvedValue([]),
+      getRepository: jest.fn().mockReturnValue(transactionRepository),
+    } as unknown as EntityManager;
+    const repository = {
+      manager: {
+        transaction: (
+          callback: (entityManager: EntityManager) => Promise<unknown>,
+        ) => callback(manager),
+      },
+    } as unknown as Repository<Ingredient>;
+    const service = new IngredientsService(repository, scoringService);
+
+    await expect(service.resolveNames(['LAURETH-4'])).resolves.toMatchObject({
+      ingredients: [active],
+      existingCount: 1,
+      newCount: 0,
+    });
+  });
+
+  it('resolves a complete pasted list and creates only genuinely unknown names', async () => {
+    const existing = [
+      ingredient(1, 'Eau', 'AQUA'),
+      ingredient(2, 'Glycérine / Glycérol', 'GLYCERIN'),
+      ingredient(3, 'Chlorure de cétrimonium', 'CETRIMONIUM CHLORIDE'),
+      ingredient(4, 'Parfum', 'PARFUM'),
+      ingredient(5, 'Phenoxyethanol', 'PHENOXYETHANOL'),
+    ];
+    const queryBuilder = createQueryBuilder(existing);
+    const create = jest.fn((value: Partial<Ingredient>) => value as Ingredient);
+    const save = jest.fn((values: Ingredient[]) =>
+      Promise.resolve(values.map((value) => ({ ...value, id: 1000 }))),
+    );
+    const transactionRepository = {
+      createQueryBuilder: jest.fn().mockReturnValue(queryBuilder),
+      create,
+      save,
+    } as unknown as Repository<Ingredient>;
+    const manager = {
+      query: jest.fn().mockResolvedValue([]),
+      getRepository: jest.fn().mockReturnValue(transactionRepository),
+    } as unknown as EntityManager;
+    const repository = {
+      manager: {
+        transaction: (
+          callback: (entityManager: EntityManager) => Promise<unknown>,
+        ) => callback(manager),
+      },
+    } as unknown as Repository<Ingredient>;
+    const service = new IngredientsService(repository, scoringService);
+
+    const result = await service.resolveNames([
+      'AQUA',
+      'GLYCERIN',
+      'CETRIMONIUM   CHLORIDE',
+      'PARFUM',
+      'PHENOXYETHANOL',
+      'glycerin',
+      'UNKNOWN INCI',
+    ]);
+
+    expect(result.ingredients).toEqual([
+      ...existing,
+      expect.objectContaining({
+        id: 1000,
+        name: 'UNKNOWN INCI',
+        officialName: 'UNKNOWN INCI',
+        status: IngredientStatus.NEW,
+        score: 0,
+        bs_score: 0,
+      }),
+    ]);
+    expect(result).toMatchObject({
+      existingCount: 5,
+      newCount: 1,
+      ambiguous: [],
+    });
+    expect(create).toHaveBeenCalledTimes(1);
+    expect(save).toHaveBeenCalledTimes(1);
   });
 
   it('filters the normal ingredient list to ACTIVE rows', async () => {
