@@ -1,14 +1,5 @@
 import React from "react";
-import {
-  Table,
-  message,
-  Input,
-  Button,
-  Row,
-  Col,
-  Modal,
-  Spin,
-} from "antd";
+import { Table, message, Input, Button, Row, Col, Modal, Spin } from "antd";
 import type { ColumnsType } from "antd/es/table";
 import { useProductByEan, useProductsByFlag } from "../../../hooks/useProduct";
 import { useFlagById } from "../../../hooks/useFlag";
@@ -115,6 +106,14 @@ const ProductsList: React.FC = () => {
       width: 100,
     },
     {
+      title: "BS Score",
+      dataIndex: "valide_bs_score",
+      key: "valide_bs_score",
+      width: 140,
+      render: (value: number) =>
+        value > 0 ? `${value} / 100 (provisoire)` : "Non calculé",
+    },
+    {
       title: "Image",
       dataIndex: "images",
       key: "images",
@@ -198,7 +197,8 @@ const ProductsList: React.FC = () => {
 
       <Spin
         spinning={
-          isSearching || Boolean(flagId && (isLoadingByFlag || isLoadingFlagInfo))
+          isSearching ||
+          Boolean(flagId && (isLoadingByFlag || isLoadingFlagInfo))
         }
       >
         <Table<Product>

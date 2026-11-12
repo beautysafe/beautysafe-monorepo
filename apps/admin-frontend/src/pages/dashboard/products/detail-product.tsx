@@ -22,7 +22,8 @@ const ProductDetail: React.FC = () => {
   const handleDelete = () => {
     Modal.confirm({
       title: "Supprimer le produit ?",
-      content: "Êtes-vous sûr de vouloir supprimer ce produit ? Cette action est irréversible.",
+      content:
+        "Êtes-vous sûr de vouloir supprimer ce produit ? Cette action est irréversible.",
       okText: "Oui, supprimer",
       okType: "danger",
       cancelText: "Annuler",
@@ -63,7 +64,11 @@ const ProductDetail: React.FC = () => {
       title={product.name}
       extra={
         <>
-          <Button onClick={() => setEditVisible(true)} type="primary" style={{ marginRight: 8 }}>
+          <Button
+            onClick={() => setEditVisible(true)}
+            type="primary"
+            style={{ marginRight: 8 }}
+          >
             Modifier
           </Button>
           <Button danger onClick={handleDelete}>
@@ -72,18 +77,29 @@ const ProductDetail: React.FC = () => {
         </>
       }
     >
-      <div style={{
-        display: "flex",
-        flexDirection: "row",
-        justifyContent: "space-between",
-        alignItems: "flex-start",
-        gap: 32,
-      }}>
+      <div
+        style={{
+          display: "flex",
+          flexDirection: "row",
+          justifyContent: "space-between",
+          alignItems: "flex-start",
+          gap: 32,
+        }}
+      >
         <div style={{ flex: 1 }}>
           <Descriptions column={1}>
             <Descriptions.Item label="EAN">{product.ean}</Descriptions.Item>
-            <Descriptions.Item label="Marque">{product.brand?.name}</Descriptions.Item>
-            <Descriptions.Item label="Score">{product.validScore}</Descriptions.Item>
+            <Descriptions.Item label="Marque">
+              {product.brand?.name}
+            </Descriptions.Item>
+            <Descriptions.Item label="Score">
+              {product.validScore}
+            </Descriptions.Item>
+            <Descriptions.Item label="BeautySafe product score">
+              {product.valide_bs_score > 0
+                ? `${product.valide_bs_score} / 100 — Provisional (ingredient ID order)`
+                : "Not calculated"}
+            </Descriptions.Item>
             <Descriptions.Item label="Average rating">
               {(product.averageRating ?? 0).toFixed(1)} / 5
             </Descriptions.Item>
@@ -91,35 +107,49 @@ const ProductDetail: React.FC = () => {
               {product.ratingsCount ?? 0}
             </Descriptions.Item>
             <Descriptions.Item label="Type">{product.type}</Descriptions.Item>
-            <Descriptions.Item label="Catégorie">{product.category?.name ?? "—"}</Descriptions.Item>
-            <Descriptions.Item label="Sous-catégorie">{product.subCategory?.name ?? "—"}</Descriptions.Item>
-            <Descriptions.Item label="Sous-sous-catégorie">{product.subSubCategory?.name ?? "—"}</Descriptions.Item>
+            <Descriptions.Item label="Catégorie">
+              {product.category?.name ?? "—"}
+            </Descriptions.Item>
+            <Descriptions.Item label="Sous-catégorie">
+              {product.subCategory?.name ?? "—"}
+            </Descriptions.Item>
+            <Descriptions.Item label="Sous-sous-catégorie">
+              {product.subSubCategory?.name ?? "—"}
+            </Descriptions.Item>
             <Descriptions.Item label="Flags">
-              {(product.flags && product.flags.length > 0)
-                ? product.flags.map((flag) => flag.name).join(', ')
+              {product.flags && product.flags.length > 0
+                ? product.flags.map((flag) => flag.name).join(", ")
                 : "—"}
             </Descriptions.Item>
             <Descriptions.Item label="Ingrédients">
-              {(product.composition && product.composition.length > 0)
-                ? (
-                    <ul style={{ margin: 0, paddingLeft: 20 }}>
-                    {product.composition.map((ing: Ingredient) =>
-                      <li key={ing.id}>
+              {product.composition && product.composition.length > 0 ? (
+                <ul style={{ margin: 0, paddingLeft: 20 }}>
+                  {product.composition.map((ing: Ingredient) => (
+                    <li key={ing.id}>
                       {ing.officialName || ing.name}
                       <span style={{ color: "#888", marginLeft: 8 }}>
-                        (Score: {ing.score})
+                        (Score: {ing.score}; BS Score: {ing.bs_score})
                       </span>
-                      </li>
-                    )}
-                    </ul>
-                ) : "—"}
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                "—"
+              )}
             </Descriptions.Item>
           </Descriptions>
         </div>
         {/* --- IMAGES --- */}
         <div>
           {Array.isArray(product.images) && product.images.length > 0 && (
-            <div style={{ marginTop: 16, display: 'flex', flexDirection: 'column', gap: 12 }}>
+            <div
+              style={{
+                marginTop: 16,
+                display: "flex",
+                flexDirection: "column",
+                gap: 12,
+              }}
+            >
               {product.images.map((img) => (
                 <a
                   href={img.image}

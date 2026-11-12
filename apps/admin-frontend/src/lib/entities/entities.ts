@@ -34,6 +34,7 @@ export interface Ingredient {
   name: string;
   officialName: string;
   score: number;
+  bs_score: 0 | 2 | 3 | 5 | 10;
   status: "ACTIVE" | "NEW";
   families: Family[];
 }
@@ -98,6 +99,7 @@ export interface Product {
   uid: number;
   name: string;
   validScore: number;
+  valide_bs_score: number;
   ean: string;
   type: ProductType;
   brand: Brand;

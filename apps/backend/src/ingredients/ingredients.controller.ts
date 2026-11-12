@@ -73,7 +73,7 @@ export class IngredientsController {
   @ApiOperation({
     summary: 'Resolve a pasted ingredient list',
     description:
-      'Matches names case-insensitively and creates missing ingredients with status NEW, score 0, and officialName equal to the submitted name.',
+      'Matches names case-insensitively and creates missing ingredients with status NEW, score 0, bs_score 0, and officialName equal to the submitted name.',
   })
   @ApiOkResponse({ type: [Ingredient] })
   @Roles('admin')

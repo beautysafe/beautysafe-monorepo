@@ -181,10 +181,14 @@ const CreateProductForm: React.FC<{ onSuccess?: () => void }> = ({
     };
 
     try {
-      await createProduct.mutateAsync(payload);
+      const createdProduct = await createProduct.mutateAsync(payload);
       setUploadsCommitted(true);
       setImages([]);
-      message.success("Produit créé !");
+      message.success(
+        createdProduct.valide_bs_score > 0
+          ? `Produit créé — score BeautySafe provisoire : ${createdProduct.valide_bs_score} / 100`
+          : "Produit créé — score BeautySafe non calculé",
+      );
       form.resetFields();
       setTimeout(() => onSuccess?.(), 0);
     } catch {
@@ -222,6 +226,13 @@ const CreateProductForm: React.FC<{ onSuccess?: () => void }> = ({
 
       <Form.Item name="validScore" label="Score">
         <InputNumber style={{ width: "100%" }} />
+      </Form.Item>
+
+      <Form.Item
+        label="BeautySafe product score"
+        extra="Calculated by the server after saving. Initial results are provisional because ingredients are ordered by ID, not verified INCI position."
+      >
+        <Input value="Calculated after saving" readOnly />
       </Form.Item>
 
       <Form.Item name="type" label="Type">

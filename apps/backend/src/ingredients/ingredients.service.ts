@@ -84,6 +84,7 @@ export class IngredientsService {
           name: original,
           officialName: original,
           score: 0,
+          bs_score: 0,
           status: IngredientStatus.NEW,
         }),
       );

@@ -27,6 +27,15 @@ export class Ingredient {
   @Column('float')
   score: number;
 
+  @ApiProperty({
+    example: 5,
+    enum: [0, 2, 3, 5, 10],
+    default: 0,
+    description: 'BeautySafe ingredient risk score',
+  })
+  @Column({ type: 'integer', default: 0 })
+  bs_score: number;
+
   @Column({
     type: 'enum',
     enum: IngredientStatus,

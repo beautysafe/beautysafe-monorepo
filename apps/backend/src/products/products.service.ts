@@ -341,6 +341,7 @@ export class ProductsService {
         'product.uid',
         'product.name',
         'product.validScore',
+        'product.valide_bs_score',
         'product.ean',
         'brand.id',
         'brand.name',
@@ -497,6 +498,7 @@ export class ProductsService {
         'product.uid',
         'product.name',
         'product.validScore',
+        'product.valide_bs_score',
         'product.ean',
         'images.id',
         'images.thumbnail',
@@ -511,6 +513,7 @@ export class ProductsService {
       uid: product.uid,
       name: product.name,
       validScore: product.validScore,
+      valide_bs_score: product.valide_bs_score,
       ean: product.ean,
       images:
         product.images?.map((img) => ({
@@ -545,6 +548,7 @@ export class ProductsService {
       'product.uid',
       'product.name',
       'product.validScore',
+      'product.valide_bs_score',
       'product.ean',
       'product.type',
       'brand.id',

@@ -349,6 +349,20 @@ const EditProductForm: React.FC<EditProductFormProps> = ({
         <InputNumber style={{ width: "100%" }} />
       </Form.Item>
 
+      <Form.Item
+        label="BeautySafe product score"
+        extra="Read-only provisional score using ingredient ID order. It is recalculated after composition changes."
+      >
+        <Input
+          value={
+            (initialValues.valide_bs_score ?? 0) > 0
+              ? `${initialValues.valide_bs_score} / 100 — Provisional`
+              : "Not calculated"
+          }
+          readOnly
+        />
+      </Form.Item>
+
       <Form.Item name="type" label="Type">
         <Input />
       </Form.Item>

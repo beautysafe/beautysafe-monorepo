@@ -9,6 +9,7 @@ import {
   Space,
   Popconfirm,
   InputNumber,
+  Select,
 } from "antd";
 import {
   useIngreddients,
@@ -20,6 +21,10 @@ import {
 import type { Ingredient } from "../../../lib/entities";
 
 const PAGE_SIZE = 20;
+const BS_SCORE_OPTIONS = [0, 2, 3, 5, 10].map((value) => ({
+  label: String(value),
+  value,
+}));
 
 const submitForm = (formId: string) => {
   document
@@ -78,6 +83,11 @@ const IngredientsList: React.FC<{ status?: Ingredient["status"] }> = ({
       key: "score",
     },
     {
+      title: "BS Score",
+      dataIndex: "bs_score",
+      key: "bs_score",
+    },
+    {
       title: "Statut",
       dataIndex: "status",
       key: "status",
@@ -131,6 +141,8 @@ const IngredientsList: React.FC<{ status?: Ingredient["status"] }> = ({
   const handleEdit = async (values: Partial<Ingredient>) => {
     if (!editing) return;
     if (values.score !== undefined) values.score = Number(values.score);
+    if (values.bs_score !== undefined)
+      values.bs_score = Number(values.bs_score) as Ingredient["bs_score"];
     await updateIngredient.mutateAsync({ id: editing.id, data: values });
     message.success("Ingrédient mis à jour !");
     setEditing(null);
@@ -138,6 +150,8 @@ const IngredientsList: React.FC<{ status?: Ingredient["status"] }> = ({
 
   const handleCreate = async (values: Partial<Ingredient>) => {
     if (values.score !== undefined) values.score = Number(values.score);
+    if (values.bs_score !== undefined)
+      values.bs_score = Number(values.bs_score) as Ingredient["bs_score"];
     await createIngredient.mutateAsync(values);
     message.success("Ingrédient ajouté !");
     setCreating(false);
@@ -224,6 +238,13 @@ const IngredientsList: React.FC<{ status?: Ingredient["status"] }> = ({
           <Form.Item name="score" label="Score">
             <InputNumber style={{ width: "100%" }} />
           </Form.Item>
+          <Form.Item
+            name="bs_score"
+            label="BeautySafe Score (BS Score)"
+            rules={[{ required: true }]}
+          >
+            <Select options={BS_SCORE_OPTIONS} />
+          </Form.Item>
         </Form>
       </Modal>
 
@@ -236,7 +257,12 @@ const IngredientsList: React.FC<{ status?: Ingredient["status"] }> = ({
         confirmLoading={createIngredient.isPending}
         destroyOnClose
       >
-        <Form id="create-form" layout="vertical" onFinish={handleCreate}>
+        <Form
+          id="create-form"
+          layout="vertical"
+          initialValues={{ bs_score: 0 }}
+          onFinish={handleCreate}
+        >
           <Form.Item name="name" label="Nom" rules={[{ required: true }]}>
             <Input />
           </Form.Item>
@@ -249,6 +275,13 @@ const IngredientsList: React.FC<{ status?: Ingredient["status"] }> = ({
           </Form.Item>
           <Form.Item name="score" label="Score">
             <InputNumber style={{ width: "100%" }} />
+          </Form.Item>
+          <Form.Item
+            name="bs_score"
+            label="BeautySafe Score (BS Score)"
+            rules={[{ required: true }]}
+          >
+            <Select options={BS_SCORE_OPTIONS} />
           </Form.Item>
         </Form>
       </Modal>

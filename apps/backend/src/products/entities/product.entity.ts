@@ -39,6 +39,17 @@ export class Product {
   @Column({ type: 'double precision', default: 0 })
   validScore: number;
 
+  @ApiProperty({
+    example: 82,
+    minimum: 0,
+    maximum: 100,
+    default: 0,
+    description:
+      'Server-calculated provisional BeautySafe score. Ingredient ID order is used until INCI positions are stored.',
+  })
+  @Column({ type: 'integer', default: 0 })
+  valide_bs_score: number;
+
   @ApiProperty({ example: '3264680010535' })
   @Column({ unique: true })
   ean: string;

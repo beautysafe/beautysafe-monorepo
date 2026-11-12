@@ -9,6 +9,7 @@ describe('IngredientsService', () => {
       name: 'Aqua',
       officialName: 'Water',
       score: 2,
+      bs_score: 2,
       status: IngredientStatus.ACTIVE,
     } as Ingredient;
     const queryBuilder: Record<string, jest.Mock> = {};
@@ -21,6 +22,7 @@ describe('IngredientsService', () => {
         name: 'New preservative',
         officialName: 'New preservative',
         score: 0,
+        bs_score: 0,
         status: IngredientStatus.NEW,
       },
     ]);
@@ -40,6 +42,7 @@ describe('IngredientsService', () => {
         name: 'New preservative',
         officialName: 'New preservative',
         score: 0,
+        bs_score: 0,
         status: IngredientStatus.NEW,
       }),
     ]);
@@ -48,6 +51,7 @@ describe('IngredientsService', () => {
       name: 'New preservative',
       officialName: 'New preservative',
       score: 0,
+      bs_score: 0,
       status: IngredientStatus.NEW,
     });
     expect(save).toHaveBeenCalledTimes(1);
