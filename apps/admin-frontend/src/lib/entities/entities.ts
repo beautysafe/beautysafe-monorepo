@@ -39,6 +39,26 @@ export interface Ingredient {
   families: Family[];
 }
 
+export interface IngredientSearchResponse {
+  items: Ingredient[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+}
+
+export interface AmbiguousIngredientMatch {
+  input: string;
+  matches: Ingredient[];
+}
+
+export interface ResolveIngredientsResponse {
+  ingredients: Ingredient[];
+  existingCount: number;
+  newCount: number;
+  ambiguous: AmbiguousIngredientMatch[];
+}
+
 export interface Flag {
   id: number;
   name: string;

@@ -46,8 +46,18 @@ const flagNamesFr: Record<string, string> = {
   "ENLARGED-PORES": "Pores dilatés",
 };
 
-const getIngredientLabel = (ingredient: any) =>
-  ingredient?.name?.trim() || ingredient?.officialName || "Ingrédient";
+const getIngredientLabel = (ingredient: any) => {
+  const name = ingredient?.name?.trim();
+  const officialName = ingredient?.officialName?.trim();
+  if (
+    name &&
+    officialName &&
+    name.toLocaleLowerCase() !== officialName.toLocaleLowerCase()
+  ) {
+    return `${officialName} — ${name}`;
+  }
+  return officialName || name || "Ingrédient";
+};
 
 const CreateProductForm: React.FC<{ onSuccess?: () => void }> = ({
   onSuccess,
@@ -227,11 +237,11 @@ const CreateProductForm: React.FC<{ onSuccess?: () => void }> = ({
         <InputNumber style={{ width: "100%" }} />
       </Form.Item>
 
-      <Form.Item
-        label="BeautySafe product score"
-        extra="Calculated by the server after saving. Initial results are provisional because ingredients are ordered by ID, not verified INCI position."
-      >
-        <Input value="Calculated after saving" readOnly />
+      <Form.Item label="BeautySafe product score">
+        <Input
+          value="Calculé automatiquement après l'enregistrement"
+          readOnly
+        />
       </Form.Item>
 
       <Form.Item name="type" label="Type">
@@ -276,6 +286,7 @@ const CreateProductForm: React.FC<{ onSuccess?: () => void }> = ({
           <Tag
             key={ingredient.id}
             closable
+            color={ingredient.status === "NEW" ? "orange" : undefined}
             onClose={(event) => {
               event.preventDefault();
               const next = selectedIngredients.filter(
@@ -289,6 +300,7 @@ const CreateProductForm: React.FC<{ onSuccess?: () => void }> = ({
             }}
           >
             {getIngredientLabel(ingredient)}
+            {ingredient.status === "NEW" ? " — Nouveau, à vérifier" : ""}
           </Tag>
         ))}
       </div>

@@ -18,13 +18,26 @@ import {
   ApiOperation,
   ApiQuery,
   ApiOkResponse,
+  ApiExtraModels,
 } from '@nestjs/swagger';
 import { Ingredient, IngredientStatus } from './entities/ingredient.entity';
 import { ResolveIngredientsDto } from './dto/resolve-ingredients.dto';
 import { Roles } from '../common/decorators/roles.decorator';
+import { IngredientSearchQueryDto } from './dto/ingredient-search-query.dto';
+import { IngredientSearchResponseDto } from './dto/ingredient-search-response.dto';
+import {
+  AmbiguousIngredientMatchDto,
+  ResolveIngredientsResponseDto,
+} from './dto/resolve-ingredients-response.dto';
 
 @ApiBearerAuth()
 @ApiTags('ingredients')
+@ApiExtraModels(
+  Ingredient,
+  IngredientSearchResponseDto,
+  AmbiguousIngredientMatchDto,
+  ResolveIngredientsResponseDto,
+)
 @Controller('ingredients')
 export class IngredientsController {
   constructor(private readonly ingredientsService: IngredientsService) {}
@@ -33,41 +46,25 @@ export class IngredientsController {
   create(@Body() createIngredientDto: CreateIngredientDto) {
     return this.ingredientsService.create(createIngredientDto);
   }
-  @ApiOperation({ summary: 'Search ingredients by name or official name' })
-  @ApiQuery({
-    name: 'q',
-    required: false,
-    type: String,
-    example: 'Aqua',
-    description: 'Backward-compatible alias for the name filter',
+  @ApiOperation({
+    summary: 'Search ingredients by name or official name',
+    description:
+      'q performs a unified OR search across both fields with exact matches first. name and officialName remain available for backward compatibility. Supplying page or limit returns the paginated response; otherwise the legacy Ingredient[] response is returned.',
   })
-  @ApiQuery({
-    name: 'name',
-    required: false,
-    type: String,
-    example: 'Aqua',
-    description: 'Search the ingredient name by prefix',
+  @ApiOkResponse({
+    schema: {
+      oneOf: [
+        { type: 'array', items: { $ref: '#/components/schemas/Ingredient' } },
+        { $ref: '#/components/schemas/IngredientSearchResponseDto' },
+      ],
+    },
   })
-  @ApiQuery({
-    name: 'officialName',
-    required: false,
-    type: String,
-    example: 'AQUA',
-    description: 'Search the official ingredient name by prefix',
-  })
-  @ApiQuery({ name: 'status', required: false, enum: IngredientStatus })
   @Get('search')
-  searchIngredients(
-    @Query('q') legacyQuery?: string,
-    @Query('name') nameQuery?: string,
-    @Query('officialName') officialNameQuery?: string,
-    @Query('status') status?: IngredientStatus,
-  ) {
-    return this.ingredientsService.searchIngredients(
-      nameQuery ?? legacyQuery,
-      officialNameQuery,
-      status,
-    );
+  async searchIngredients(@Query() query: IngredientSearchQueryDto) {
+    const result = await this.ingredientsService.search(query);
+    return query.page !== undefined || query.limit !== undefined
+      ? result
+      : result.items;
   }
 
   @ApiOperation({
@@ -75,11 +72,29 @@ export class IngredientsController {
     description:
       'Matches names case-insensitively and creates missing ingredients with status NEW, score 0, bs_score 0, and officialName equal to the submitted name.',
   })
-  @ApiOkResponse({ type: [Ingredient] })
+  @ApiQuery({
+    name: 'summary',
+    required: false,
+    type: Boolean,
+    description:
+      'Return resolution counts and ambiguities. Omit for the legacy Ingredient[] response.',
+  })
+  @ApiOkResponse({
+    schema: {
+      oneOf: [
+        { type: 'array', items: { $ref: '#/components/schemas/Ingredient' } },
+        { $ref: '#/components/schemas/ResolveIngredientsResponseDto' },
+      ],
+    },
+  })
   @Roles('admin')
   @Post('resolve')
-  resolve(@Body() dto: ResolveIngredientsDto) {
-    return this.ingredientsService.resolveNames(dto.names);
+  async resolve(
+    @Body() dto: ResolveIngredientsDto,
+    @Query('summary') summary?: string,
+  ) {
+    const result = await this.ingredientsService.resolveNames(dto.names);
+    return summary === 'true' ? result : result.ingredients;
   }
 
   @Get()

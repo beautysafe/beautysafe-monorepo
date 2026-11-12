@@ -53,7 +53,16 @@ const flagNamesFr: Record<string, string> = {
 };
 
 const getIngredientLabel = (ingredient: any) => {
-  return ingredient?.name?.trim() || ingredient?.officialName || "Ingrédient";
+  const name = ingredient?.name?.trim();
+  const officialName = ingredient?.officialName?.trim();
+  if (
+    name &&
+    officialName &&
+    name.toLocaleLowerCase() !== officialName.toLocaleLowerCase()
+  ) {
+    return `${officialName} — ${name}`;
+  }
+  return officialName || name || "Ingrédient";
 };
 
 const EditProductForm: React.FC<EditProductFormProps> = ({
@@ -350,10 +359,7 @@ const EditProductForm: React.FC<EditProductFormProps> = ({
         <InputNumber style={{ width: "100%" }} />
       </Form.Item>
 
-      <Form.Item
-        label="BeautySafe product score"
-        extra="Read-only provisional score using ingredient ID order. It is recalculated after composition changes."
-      >
+      <Form.Item label="BeautySafe product score">
         <Input
           value={formatBeautySafeScore(initialValues.valide_bs_score)}
           readOnly
@@ -406,6 +412,7 @@ const EditProductForm: React.FC<EditProductFormProps> = ({
           <Tag
             key={ingredient.id}
             closable
+            color={ingredient.status === "NEW" ? "orange" : undefined}
             style={{ marginBottom: 8 }}
             onClose={(e) => {
               e.preventDefault();
@@ -420,6 +427,7 @@ const EditProductForm: React.FC<EditProductFormProps> = ({
             }}
           >
             {getIngredientLabel(ingredient)}
+            {ingredient.status === "NEW" ? " — Nouveau, à vérifier" : ""}
           </Tag>
         ))}
       </div>

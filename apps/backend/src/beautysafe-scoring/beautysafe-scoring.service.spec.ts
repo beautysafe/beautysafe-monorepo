@@ -119,4 +119,44 @@ describe('BeautySafeScoringService', () => {
       [[7]],
     );
   });
+
+  it('recalculates affected products asynchronously after an ingredient update', async () => {
+    let resolveUpdate: (() => void) | undefined;
+    const updated = new Promise<void>((resolve) => {
+      resolveUpdate = resolve;
+    });
+    const query = jest.fn((sql: string) => {
+      if (sql.includes('SELECT DISTINCT')) {
+        return Promise.resolve([{ productUid: 10 }]);
+      }
+      if (sql.includes('INNER JOIN ingredient')) {
+        return Promise.resolve([
+          {
+            productUid: 10,
+            ingredientId: 7,
+            name: 'Aqua',
+            bsScore: 0,
+            status: IngredientStatus.ACTIVE,
+          },
+        ]);
+      }
+      if (sql.includes('UPDATE product')) {
+        resolveUpdate?.();
+        return Promise.resolve([]);
+      }
+      return Promise.resolve([]);
+    });
+    const repository = { query } as unknown as Repository<Product>;
+    const backgroundService = new BeautySafeScoringService(repository, {
+      get: jest.fn().mockReturnValue('true'),
+    } as unknown as ConfigService);
+
+    backgroundService.scheduleIngredientRecalculation(7);
+    await updated;
+
+    expect(query).toHaveBeenCalledWith(
+      expect.stringContaining('UPDATE product'),
+      [expect.stringContaining('"uid":10')],
+    );
+  });
 });

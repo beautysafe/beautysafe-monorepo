@@ -1,4 +1,8 @@
-import type { Ingredient } from "../lib/entities";
+import type {
+  Ingredient,
+  IngredientSearchResponse,
+  ResolveIngredientsResponse,
+} from "../lib/entities";
 import { api } from "../lib/api/api-client";
 
 export async function listIngredients(
@@ -40,19 +44,31 @@ export async function deleteIngredient(id: number | string): Promise<void> {
 }
 
 export async function searchIngredients(
-  nameQuery: string,
-  officialNameQuery?: string,
+  q: string,
   status?: Ingredient["status"],
 ): Promise<Ingredient[]> {
   return api.get("/ingredients/search", {
-    ...(nameQuery?.trim() ? { name: nameQuery } : {}),
-    ...(officialNameQuery?.trim() ? { officialName: officialNameQuery } : {}),
+    ...(q.trim() ? { q: q.trim() } : {}),
     ...(status ? { status } : {}),
+  });
+}
+
+export async function searchIngredientsPage(
+  q: string,
+  status: Ingredient["status"],
+  page: number,
+  limit: number,
+): Promise<IngredientSearchResponse> {
+  return api.get("/ingredients/search", {
+    q: q.trim(),
+    status,
+    page,
+    limit,
   });
 }
 
 export async function resolveIngredients(
   names: string[],
-): Promise<Ingredient[]> {
-  return api.post("/ingredients/resolve", { names });
+): Promise<ResolveIngredientsResponse> {
+  return api.post("/ingredients/resolve?summary=true", { names });
 }

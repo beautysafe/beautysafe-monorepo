@@ -12,7 +12,7 @@ export class ResolveIngredientsDto {
     type: [String],
     example: ['Aqua', 'Glycerin', 'New ingredient'],
     description:
-      'Ingredient names pasted from a product list. Existing names are matched case-insensitively; missing names are created as NEW ingredients.',
+      'Ingredient names pasted from a product list. Exact name or officialName matches are reused case-insensitively; missing names are created as NEW ingredients.',
   })
   @IsArray()
   @ArrayNotEmpty()

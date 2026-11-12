@@ -16,7 +16,7 @@ import {
   useUpdateIngredient,
   useCreateIngredient,
   useDeleteIngredient,
-  useSearchIngredients,
+  useSearchIngredientsPage,
 } from "../../../hooks/useIngredient";
 import type { Ingredient } from "../../../lib/entities";
 
@@ -36,31 +36,30 @@ const IngredientsList: React.FC<{ status?: Ingredient["status"] }> = ({
   status = "ACTIVE",
 }) => {
   const [page, setPage] = useState(1);
-  const [nameSearch, setNameSearch] = useState("");
-  const [officialNameSearch, setOfficialNameSearch] = useState("");
+  const [search, setSearch] = useState("");
   const [editing, setEditing] = useState<Ingredient | null>(null);
   const [creating, setCreating] = useState(false);
 
   const { data, isLoading } = useIngreddients(page, PAGE_SIZE, status);
-  const { data: searchResults, isLoading: isSearching } = useSearchIngredients(
-    nameSearch,
-    officialNameSearch,
-    status,
-  );
+  const { data: searchResults, isLoading: isSearching } =
+    useSearchIngredientsPage(search, status, page, PAGE_SIZE);
   const updateIngredient = useUpdateIngredient();
   const createIngredient = useCreateIngredient();
   const deleteIngredient = useDeleteIngredient();
 
-  const hasSearch = Boolean(nameSearch || officialNameSearch);
+  const hasSearch = Boolean(search.trim());
   const ingredients = hasSearch
-    ? Array.isArray(searchResults)
-      ? searchResults
-      : []
+    ? (searchResults?.items ?? [])
     : Array.isArray(data)
       ? data
       : [];
 
-  const total = hasSearch ? ingredients.length : 12000;
+  const total = hasSearch ? (searchResults?.total ?? 0) : 12000;
+
+  const updateSearch = (value: string) => {
+    setSearch(value);
+    setPage(1);
+  };
 
   const columns = [
     {
@@ -159,28 +158,16 @@ const IngredientsList: React.FC<{ status?: Ingredient["status"] }> = ({
 
   return (
     <>
-      <Space wrap style={{ marginBottom: 16 }}>
-        <Input.Search
-          placeholder="Rechercher par nom..."
-          value={nameSearch}
-          onChange={(event) => setNameSearch(event.target.value)}
-          onSearch={setNameSearch}
-          onClear={() => setNameSearch("")}
-          allowClear
-          style={{ width: 320 }}
-          enterButton
-        />
-        <Input.Search
-          placeholder="Rechercher par nom officiel..."
-          value={officialNameSearch}
-          onChange={(event) => setOfficialNameSearch(event.target.value)}
-          onSearch={setOfficialNameSearch}
-          onClear={() => setOfficialNameSearch("")}
-          allowClear
-          style={{ width: 320 }}
-          enterButton
-        />
-      </Space>
+      <Input.Search
+        placeholder="Rechercher un ingrédient par nom ou nom officiel..."
+        value={search}
+        onChange={(event) => updateSearch(event.target.value)}
+        onSearch={updateSearch}
+        onClear={() => updateSearch("")}
+        allowClear
+        style={{ width: 420, marginBottom: 16 }}
+        enterButton
+      />
 
       {status === "ACTIVE" && (
         <Button
@@ -197,17 +184,13 @@ const IngredientsList: React.FC<{ status?: Ingredient["status"] }> = ({
         dataSource={ingredients}
         rowKey="id"
         loading={isLoading || isSearching}
-        pagination={
-          hasSearch
-            ? false // No pagination in search mode, unless your API supports it
-            : {
-                current: page,
-                pageSize: PAGE_SIZE,
-                total: total,
-                onChange: setPage,
-                showSizeChanger: false,
-              }
-        }
+        pagination={{
+          current: page,
+          pageSize: PAGE_SIZE,
+          total,
+          onChange: setPage,
+          showSizeChanger: false,
+        }}
       />
 
       {/* Edit Modal */}

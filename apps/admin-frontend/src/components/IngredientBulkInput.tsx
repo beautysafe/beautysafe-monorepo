@@ -22,10 +22,28 @@ const IngredientBulkInput: React.FC<Props> = ({ onResolved, disabled }) => {
     }
 
     try {
-      const ingredients = await resolveIngredients.mutateAsync(names);
-      onResolved(ingredients);
-      setValue("");
-      message.success(`${ingredients.length} ingrédient(s) ajouté(s)`);
+      const result = await resolveIngredients.mutateAsync(names);
+      onResolved(result.ingredients);
+      message.success(
+        `${result.existingCount} ingrédient(s) existant(s), ${result.newCount} nouveau(x) ingrédient(s)`,
+      );
+      if (result.ambiguous.length) {
+        message.warning(
+          `Correspondance ambiguë : ${result.ambiguous
+            .map(
+              (entry) =>
+                `${entry.input} (${entry.matches
+                  .map(
+                    (match) =>
+                      `#${match.id} ${match.officialName || match.name}`,
+                  )
+                  .join(" / ")})`,
+            )
+            .join(", ")}. Aucun choix automatique n’a été effectué.`,
+        );
+      } else {
+        setValue("");
+      }
     } catch {
       message.error("Impossible de résoudre les ingrédients");
     }

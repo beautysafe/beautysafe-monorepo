@@ -5,6 +5,4 @@ export const hasCalculatedBeautySafeScore = (
 export const formatBeautySafeScore = (
   score: number | null | undefined,
 ): string =>
-  hasCalculatedBeautySafeScore(score)
-    ? `${score} / 100 (provisoire)`
-    : "Non calculé";
+  hasCalculatedBeautySafeScore(score) ? `${score} / 100` : "Non calculé";

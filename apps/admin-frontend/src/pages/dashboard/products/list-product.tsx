@@ -3,7 +3,7 @@ import { Table, message, Input, Button, Row, Col, Modal, Spin } from "antd";
 import type { ColumnsType } from "antd/es/table";
 import { useProductByEan, useProductsByFlag } from "../../../hooks/useProduct";
 import { useFlagById } from "../../../hooks/useFlag";
-import type { Product } from "../../../lib/entities";
+import type { Product, ProductImage } from "../../../lib/entities";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import CreateProductForm from "./create-product-form";
 import { formatBeautySafeScore } from "../../../lib/beautysafe-score";
@@ -118,7 +118,7 @@ const ProductsList: React.FC = () => {
       dataIndex: "images",
       key: "images",
       width: 90,
-      render: (images: any[]) => {
+      render: (images: ProductImage[] | undefined) => {
         const imageUrl =
           cleanUrl(images?.[0]?.thumbnail) || cleanUrl(images?.[0]?.image);
 

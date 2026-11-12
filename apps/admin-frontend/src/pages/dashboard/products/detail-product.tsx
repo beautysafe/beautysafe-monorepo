@@ -9,10 +9,7 @@ import {
 import EditProductForm from "./edit-product";
 import { useQueryClient } from "@tanstack/react-query";
 import type { Ingredient, Product } from "../../../lib/entities";
-import {
-  formatBeautySafeScore,
-  hasCalculatedBeautySafeScore,
-} from "../../../lib/beautysafe-score";
+import { formatBeautySafeScore } from "../../../lib/beautysafe-score";
 
 const ProductDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -101,9 +98,6 @@ const ProductDetail: React.FC = () => {
             </Descriptions.Item>
             <Descriptions.Item label="BeautySafe product score">
               {formatBeautySafeScore(product.valide_bs_score)}
-              {hasCalculatedBeautySafeScore(product.valide_bs_score)
-                ? " — ordre provisoire par ID d’ingrédient"
-                : ""}
             </Descriptions.Item>
             <Descriptions.Item label="Average rating">
               {(product.averageRating ?? 0).toFixed(1)} / 5

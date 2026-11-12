@@ -8,8 +8,19 @@ import {
   searchIngredients,
   listNewIngredients,
   resolveIngredients,
+  searchIngredientsPage,
 } from "../services/ingredient.service";
 import type { Ingredient } from "../lib/entities";
+import { useEffect, useState } from "react";
+
+function useDebouncedValue<T>(value: T, delay = 250): T {
+  const [debouncedValue, setDebouncedValue] = useState(value);
+  useEffect(() => {
+    const timeout = window.setTimeout(() => setDebouncedValue(value), delay);
+    return () => window.clearTimeout(timeout);
+  }, [value, delay]);
+  return debouncedValue;
+}
 
 export function useIngreddients(
   page: number,
@@ -40,6 +51,7 @@ export function useCreateIngredient() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["ingredients"] });
       queryClient.invalidateQueries({ queryKey: ["ingredientsSearch"] });
+      queryClient.invalidateQueries({ queryKey: ["ingredientsSearchPage"] });
     },
   });
 }
@@ -57,6 +69,7 @@ export function useUpdateIngredient() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["ingredients"] });
       queryClient.invalidateQueries({ queryKey: ["ingredientsSearch"] });
+      queryClient.invalidateQueries({ queryKey: ["ingredientsSearchPage"] });
     },
   });
 }
@@ -68,19 +81,34 @@ export function useDeleteIngredient() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["ingredients"] });
       queryClient.invalidateQueries({ queryKey: ["ingredientsSearch"] });
+      queryClient.invalidateQueries({ queryKey: ["ingredientsSearchPage"] });
     },
   });
 }
 
 export function useSearchIngredients(
-  nameQuery: string,
-  officialNameQuery?: string,
+  query: string,
   status?: Ingredient["status"],
 ) {
+  const debouncedQuery = useDebouncedValue(query.trim());
   return useQuery({
-    queryKey: ["ingredientsSearch", nameQuery, officialNameQuery, status],
-    queryFn: () => searchIngredients(nameQuery, officialNameQuery, status),
-    enabled: !!nameQuery || !!officialNameQuery,
+    queryKey: ["ingredientsSearch", debouncedQuery, status],
+    queryFn: () => searchIngredients(debouncedQuery, status),
+    enabled: Boolean(debouncedQuery),
+  });
+}
+
+export function useSearchIngredientsPage(
+  query: string,
+  status: Ingredient["status"],
+  page: number,
+  limit: number,
+) {
+  const debouncedQuery = useDebouncedValue(query.trim());
+  return useQuery({
+    queryKey: ["ingredientsSearchPage", debouncedQuery, status, page, limit],
+    queryFn: () => searchIngredientsPage(debouncedQuery, status, page, limit),
+    enabled: Boolean(debouncedQuery),
   });
 }
 
@@ -91,6 +119,7 @@ export function useResolveIngredients() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["ingredients"] });
       queryClient.invalidateQueries({ queryKey: ["ingredientsSearch"] });
+      queryClient.invalidateQueries({ queryKey: ["ingredientsSearchPage"] });
     },
   });
 }
