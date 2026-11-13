@@ -30,6 +30,9 @@ export class User {
   @Column()
   password: string;
 
+  @Column({ type: 'integer', default: 0, select: false })
+  authVersion: number;
+
   @ApiProperty({
     type: Boolean,
     default: false,
@@ -40,7 +43,7 @@ export class User {
     default: false,
   })
   vip: boolean;
-  
+
   @ApiProperty({ required: false, description: 'Full name of the user' })
   @Column({ type: 'varchar', length: 150, nullable: true })
   fullName?: string;

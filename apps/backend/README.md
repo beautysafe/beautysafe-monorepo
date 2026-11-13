@@ -171,3 +171,26 @@ or apply the compiled migration set manually after building, run:
 pnpm --filter backend migration:show:prod
 pnpm --filter backend migration:run:prod
 ```
+
+## Password reset email
+
+Password-reset codes are delivered through Gmail SMTP over implicit TLS on port
+465. Copy the mail variables from `.env.example`, use a Google App Password for
+`MAIL_PASSWORD`, and generate an independent high-entropy value for
+`PASSWORD_RESET_SECRET`. Never reuse `JWT_SECRET` as the reset secret.
+The reset secret must contain at least 32 characters.
+
+Verify the SMTP connection and send a harmless local test email with:
+
+```bash
+pnpm --filter backend mail:test
+```
+
+The command sends only to `MAIL_TEST_TO`; it never creates a password-reset
+request. Apply the password-reset schema locally only after reviewing migration
+status:
+
+```bash
+pnpm --filter backend migration:show
+pnpm --filter backend migration:run
+```

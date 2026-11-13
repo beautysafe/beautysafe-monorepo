@@ -24,8 +24,25 @@ export class UsersService {
     });
   }
 
+  async findAuthByEmail(email: string) {
+    return this.usersRepo
+      .createQueryBuilder('user')
+      .addSelect('user.authVersion')
+      .where('user.email = :email', { email: email.toLowerCase() })
+      .getOne();
+  }
+
   async findById(id: number) {
     return this.usersRepo.findOne({ where: { id } });
+  }
+
+  async findAuthById(id: number) {
+    return this.usersRepo
+      .createQueryBuilder('user')
+      .select(['user.id', 'user.email', 'user.role'])
+      .addSelect('user.authVersion')
+      .where('user.id = :id', { id })
+      .getOne();
   }
 
   async create(email: string, password: string, role: any) {
@@ -82,7 +99,7 @@ export class UsersService {
     await this.cleanup(user.avatarKey);
     return { message: 'Account deleted' };
   }
-    // ---------------- VIP Update ----------------
+  // ---------------- VIP Update ----------------
 
   async updateUserVip(userId: number, vip: boolean) {
     const user = await this.usersRepo.findOne({
@@ -90,7 +107,7 @@ export class UsersService {
     });
 
     if (!user) {
-      throw new NotFoundException("User not found");
+      throw new NotFoundException('User not found');
     }
 
     user.vip = vip;

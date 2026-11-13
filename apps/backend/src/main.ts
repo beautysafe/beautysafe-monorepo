@@ -8,6 +8,7 @@ import { ValidationPipe } from '@nestjs/common';
 
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
+  app.set('trust proxy', 1);
   app.useStaticAssets(join(process.cwd(), 'uploads'), {
     prefix: '/uploads',
   });
@@ -60,4 +61,4 @@ async function bootstrap() {
   console.log(`🚀 API is listening on http://0.0.0.0:${port}`);
 }
 
-bootstrap();
+void bootstrap();

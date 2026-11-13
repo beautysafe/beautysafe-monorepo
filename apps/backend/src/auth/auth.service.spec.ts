@@ -19,7 +19,7 @@ describe('AuthService refresh sessions', () => {
   let service: AuthService;
   let sessions: AuthRefreshSession[];
   let user: User;
-  let usersService: Pick<UsersService, 'findByEmail'>;
+  let usersService: Pick<UsersService, 'findAuthByEmail'>;
   let jwtService: JwtService;
 
   beforeEach(() => {
@@ -29,9 +29,10 @@ describe('AuthService refresh sessions', () => {
       email: 'mobile@beautysafe.online',
       role: UserRole.CLIENT,
       password: '',
+      authVersion: 0,
     } as User;
     usersService = {
-      findByEmail: jest.fn().mockResolvedValue(user),
+      findAuthByEmail: jest.fn().mockResolvedValue(user),
     };
     jwtService = new JwtService({
       secret: 'refresh-session-test-secret',
@@ -43,6 +44,21 @@ describe('AuthService refresh sessions', () => {
       findOne: jest.fn((options: FindOneOptions<User>) => {
         const where = options.where as FindOptionsWhere<User>;
         return Promise.resolve(where.id === user.id ? user : null);
+      }),
+      createQueryBuilder: jest.fn(() => {
+        let userId = 0;
+        const queryBuilder: Record<string, jest.Mock> = {};
+        queryBuilder.addSelect = jest.fn().mockReturnValue(queryBuilder);
+        queryBuilder.where = jest.fn(
+          (_query: string, parameters: { userId: number }) => {
+            userId = parameters.userId;
+            return queryBuilder;
+          },
+        );
+        queryBuilder.getOne = jest.fn(() =>
+          Promise.resolve(userId === user.id ? user : null),
+        );
+        return queryBuilder;
       }),
     } as unknown as Repository<User>;
     const sessionsRepository = {
@@ -148,6 +164,7 @@ describe('AuthService refresh sessions', () => {
       sub: number;
       username: string;
       role: UserRole;
+      ver: number;
       iat: number;
       exp: number;
     }>(response.accessToken);
@@ -170,6 +187,7 @@ describe('AuthService refresh sessions', () => {
       sub: user.id,
       username: user.email,
       role: UserRole.CLIENT,
+      ver: 0,
     });
     expect(accessPayload.exp - accessPayload.iat).toBe(
       ACCESS_TOKEN_TTL_SECONDS,

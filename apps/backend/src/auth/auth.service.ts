@@ -18,7 +18,7 @@ import {
 } from './dto/auth-token-response.dto';
 import { AuthRefreshSession } from './entities/auth-refresh-session.entity';
 
-type AuthenticatedUser = Pick<User, 'id' | 'email' | 'role'>;
+type AuthenticatedUser = Pick<User, 'id' | 'email' | 'role' | 'authVersion'>;
 
 @Injectable()
 export class AuthService {
@@ -35,13 +35,18 @@ export class AuthService {
   ): Promise<AuthenticatedUser | null> {
     if (!email || !password) return null;
 
-    const user = await this.usersService.findByEmail(email.toLowerCase());
+    const user = await this.usersService.findAuthByEmail(email.toLowerCase());
     if (!user?.password) return null;
 
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) return null;
 
-    return { id: user.id, email: user.email, role: user.role };
+    return {
+      id: user.id,
+      email: user.email,
+      role: user.role,
+      authVersion: user.authVersion ?? 0,
+    };
   }
 
   async login(user: AuthenticatedUser): Promise<LoginResponseDto> {
@@ -83,16 +88,24 @@ export class AuthService {
           throw this.invalidRefreshToken();
         }
 
-        const user = await manager.getRepository(User).findOne({
-          where: { id: session.userId },
-        });
+        const user = await manager
+          .getRepository(User)
+          .createQueryBuilder('user')
+          .addSelect('user.authVersion')
+          .where('user.id = :userId', { userId: session.userId })
+          .getOne();
         if (!user) throw this.invalidRefreshToken();
 
         session.revokedAt = now;
         await sessionsRepository.save(session);
 
         return this.issueTokenPair(
-          { id: user.id, email: user.email, role: user.role },
+          {
+            id: user.id,
+            email: user.email,
+            role: user.role,
+            authVersion: user.authVersion ?? 0,
+          },
           sessionsRepository,
           session.expiresAt,
           now,
@@ -125,11 +138,13 @@ export class AuthService {
       sub: number;
       role: UserRole;
       jti: string;
+      ver: number;
     } = {
       username: user.email,
       sub: user.id,
       role: user.role,
       jti: randomUUID(),
+      ver: user.authVersion ?? 0,
     };
     const accessToken = this.jwtService.sign(payload);
     const accessIssuedAtSeconds = Math.floor(now.getTime() / 1000);
